@@ -1,15 +1,17 @@
 circle-craters
 ==============
 
-A crater-counting python plugin for QGIS.
+A crater-counting python plugin for [QGIS](http://www.qgis.org).
 
 Current Status: In Progress
 
+Written for QGIS versions 2.0 and greater.
+
 ##Details
 
-* This QGIS plugin is designed to offer an open source alternative to the craterTools plugin for ArcGIS.
+* This QGIS plugin is designed to offer an open source alternative to the [craterTools](http://hrscview.fu-berlin.de/software.html) plugin for [ArcGIS](http://www.esri.com/software/arcgis).
 
-* Crater counting is a technique used by planetary scientists to estimate the age of a surface.
+* [Crater counting](http://en.wikipedia.org/wiki/Crater_counting) is a technique used by planetary scientists to estimate the age of a surface.
 
 * This is my first QGIS plugin
 
@@ -21,7 +23,7 @@ Current Status: In Progress
 
 * Once I have a decent product I intend to include this in the QGIS plugin repository
 
-#How to install
+##How to install
 
 1. Copy the entire directory containing the plugin to the QGIS plugin directory. The QGIS plugin directory should be in ~/.qgis2/python/plugins
 
