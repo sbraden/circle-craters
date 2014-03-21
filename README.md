@@ -23,10 +23,10 @@ Current Status: In Progress
 
 #How to install
 
-* Copy the entire directory containing the plugin to the QGIS plugin directory. The QGIS plugin directory should be in ~/.qgis2/python/plugins
+1. Copy the entire directory containing the plugin to the QGIS plugin directory. The QGIS plugin directory should be in ~/.qgis2/python/plugins
 
-* Compile the ui file using pyuic4
+2. Compile the ui file using pyuic4
 
-* Compile the resources file using pyrcc4
+3. Compile the resources file using pyrcc4
 
-* Test the plugin by enabling it in the QGIS plugin manager
+4. Test the plugin by enabling it in the QGIS plugin manager
