@@ -115,3 +115,40 @@ class CircleCraters:
         '''
 
         return raidus, center
+
+'''
+From: http://gis.stackexchange.com/questions/45094/how-to-programatically-check-for-a-mouse-click-in-qgis
+The best way to make a new tool like the Select Single Feature tool is to inherit 
+from the QgsMapTool class. When your tool is active, which can be set using 
+QgsMapCanvas::setMapTool, any keyboard or click events the canvas gets will be 
+passed onto your custom tool.
+
+http://www.qgis.org/api/classQgsMapTool.html
+'''
+
+class PointTool(QgsMapTool):   
+    def __init__(self, canvas):
+        QgsMapTool.__init__(self, canvas)
+        self.canvas = canvas    
+
+    def canvasPressEvent(self, event):
+        pass
+
+    def canvasMoveEvent(self, event):
+        x = event.pos().x()
+        y = event.pos().y()
+
+        point = self.canvas.getCoordinateTransform().toMapCoordinates(x, y)
+
+    def canvasReleaseEvent(self, event):
+        #Get the click
+        x = event.pos().x()
+        y = event.pos().y()
+
+        point = self.canvas.getCoordinateTransform().toMapCoordinates(x, y)
+
+    def activate(self):
+        pass
+
+    def deactivate(self):
+        pass
