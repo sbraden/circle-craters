@@ -79,3 +79,39 @@ class CircleCraters:
             # do something useful (delete the line containing pass and
             # substitute with your code)
             pass
+
+    def points2circle(p1, p2, p3):
+        '''
+        inputs: p1, p2, p3 are tuples representing points in 2D space
+        returns: radius in units of ? and the center point as a tuple
+        We are solving for x.
+        Better algorithms:
+        http://stackoverflow.com/questions/4103405/what-is-the-algorithm-for-finding-the-center-of-a-circle-from-three-points
+        '''
+        # define the points
+        x1, y1 = p1[0], p1[1]
+        x2, y2 = p2[0], p2[1]
+        x3, y3 = p3[0], p3[1]
+        # calculate the two chord lines
+        ma = (y2 - y1) / (x2 - x1)
+        mb = (y3 - y2) / (x3 - x2)
+        ya = ma * (x - x1) + y1
+        yb = mb * (x - x2) + y2
+        # The center of the circle is the intersection of the 2 lines
+        # perpendicular to and passing through the midpoints of the lines 
+        # p1p2 and p2p3. 
+        norm_ya = (-1/ma)*(x - )
+        norm_yb = (-1/mb)*
+
+        '''
+        Need to catch the following errors:
+
+        1. (mb - ma) is only zero when the lines are parallel 
+        in which case they must be coincident and 
+        thus no circle results.
+        2. If either line is vertical then the corresponding slope is infinite. 
+        This can be solved by simply rearranging the order of the points so 
+        that vertical lines do not occur. 
+        '''
+
+        return raidus, center
