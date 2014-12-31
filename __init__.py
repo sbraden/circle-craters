@@ -3,11 +3,12 @@
 /***************************************************************************
  CircleCraters
                                  A QGIS plugin
- Tool for crater counting for planetary science. Takes three points and fits a circle. 
+ A crater counting tool for planetary science
                              -------------------
-        begin                : 2014-03-13
-        copyright            : (C) 2014 by Sarah Braden
+        begin                : 2014-12-31
+        copyright            : (C) 2014 by Sarah E Braden
         email                : braden.sarah@gmail.com
+        git sha              : $Format:%H$
  ***************************************************************************/
 
 /***************************************************************************
@@ -21,7 +22,14 @@
  This script initializes the plugin, making it known to QGIS.
 """
 
-def classFactory(iface):
-    # load CircleCraters class from file CircleCraters
-    from circlecraters import CircleCraters
+
+# noinspection PyPep8Naming
+def classFactory(iface):  # pylint: disable=invalid-name
+    """Load CircleCraters class from file CircleCraters.
+
+    :param iface: A QGIS interface instance.
+    :type iface: QgsInterface
+    """
+    #
+    from .circle_craters import CircleCraters
     return CircleCraters(iface)

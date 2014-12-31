@@ -3,10 +3,11 @@
 /***************************************************************************
  CircleCratersDialog
                                  A QGIS plugin
- Tool for crater counting for planetary science. Takes three points and fits a circle. 
+ A crater counting tool for planetary science
                              -------------------
-        begin                : 2014-03-13
-        copyright            : (C) 2014 by Sarah Braden
+        begin                : 2014-12-31
+        git sha              : $Format:%H$
+        copyright            : (C) 2014 by Sarah E Braden
         email                : braden.sarah@gmail.com
  ***************************************************************************/
 
@@ -20,14 +21,18 @@
  ***************************************************************************/
 """
 
-from PyQt4 import QtCore, QtGui
-from ui_circlecraters import Ui_CircleCraters
-# create the dialog for zoom to point
+import os
+
+from PyQt4 import QtGui, uic
+
+FORM_CLASS, _ = uic.loadUiType(os.path.join(
+    os.path.dirname(__file__), 'circle_craters_dialog_base.ui'))
 
 
-class CircleCratersDialog(QtGui.QDialog, Ui_CircleCraters):
-    def __init__(self):
-        QtGui.QDialog.__init__(self)
+class CircleCratersDialog(QtGui.QDialog, FORM_CLASS):
+    def __init__(self, parent=None):
+        """Constructor."""
+        super(CircleCratersDialog, self).__init__(parent)
         # Set up the user interface from Designer.
         # After setupUI you can access any designer object by doing
         # self.<objectname>, and you can use autoconnect slots - see

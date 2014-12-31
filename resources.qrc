@@ -1,5 +1,5 @@
 <RCC>
-    <qresource prefix="/plugins/circlecraters" >
+    <qresource prefix="/plugins/CircleCraters" >
         <file>icon.png</file>
     </qresource>
 </RCC>

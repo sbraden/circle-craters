@@ -1,38 +1,36 @@
-# This file contains metadata for your plugin. Beginning
-# with version 1.8 this is the preferred way to supply information about a
-# plugin. The current method of embedding metadata in __init__.py will
-# be supported until version 2.0
+# This file contains metadata for your plugin. Since 
+# version 2.0 of QGIS this is the proper way to supply 
+# information about a plugin. The old method of 
+# embedding metadata in __init__.py will 
+# is no longer supported since version 2.0.
 
-# This file should be included when you package your plugin.
-
-# Mandatory items:
-
+# This file should be included when you package your plugin.# Mandatory items:
 
 [general]
 name=Circle Craters
-qgisMinimumVersion=2.2
-description=Tool for crater counting for planetary science. Takes three points and fits a circle. 
+qgisMinimumVersion=2.0
+description=A crater counting tool for planetary science
 version=0.1
-author=Sarah Braden
+author=Sarah E Braden
 email=braden.sarah@gmail.com
 
-# end of mandatory metadata
+# End of mandatory metadata
 
 # Optional items:
 
-# Uncomment the following line and add your changelog entries:
+# Uncomment the following line and add your changelog:
 # changelog=
 
-# tags are comma separated with spaces allowed
+# Tags are comma separated with spaces allowed
 tags=
 
-homepage=
+homepage=https://github.com/sbraden/circle-craters
 tracker=
-repository=
+repository=https://github.com/sbraden/circle-craters
 icon=icon.png
 # experimental flag
 experimental=True
 
-# deprecated flag (applies to the whole plugin, not just a single version
+# deprecated flag (applies to the whole plugin, not just a single version)
 deprecated=False
 
