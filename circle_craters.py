@@ -23,7 +23,7 @@
 from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
 from PyQt4.QtGui import QAction, QIcon
 # Initialize Qt resources from file resources.py
-import resources_rc
+import resources
 # Import the code for the dialog
 from circle_craters_dialog import CircleCratersDialog
 import os.path
@@ -82,7 +82,6 @@ class CircleCraters:
         """
         # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
         return QCoreApplication.translate('CircleCraters', message)
-
 
     def add_action(
         self,
@@ -167,7 +166,6 @@ class CircleCraters:
             callback=self.run,
             parent=self.iface.mainWindow())
 
-
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
         for action in self.actions:
@@ -175,7 +173,6 @@ class CircleCraters:
                 self.tr(u'&Circle Craters'),
                 action)
             self.iface.removeToolBarIcon(action)
-
 
     def run(self):
         """Run method that performs all the real work"""
