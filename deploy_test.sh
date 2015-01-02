@@ -14,6 +14,8 @@ cp $source_dir/icon.png $destination/icon.png
 cp $source_dir/metadata.txt $destination/metadata.txt
 cp $source_dir/resources.qrc $destination/resources.qrc
 cp $source_dir/circle_craters_dialog_base.ui $destination/circle_craters_dialog_base.ui
+
+cp $source_dir/rectangle_example.py $destination/rectangle_example.py
 # Compile the ui file using pyuic4
 pyuic4 $destination/ui_circlecraters.ui> $destination/ui_circlecraters.py
 #Compile the resources file using pyrcc4

@@ -22,11 +22,16 @@
 """
 from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
 from PyQt4.QtGui import QAction, QIcon
+from PyQt4.QtGui import QMessageBox
 # Initialize Qt resources from file resources.py
 import resources
 # Import the code for the dialog
 from circle_craters_dialog import CircleCratersDialog
 import os.path
+from rectangle_example import RectangleMapTool
+
+from qgis.gui import *
+from qgis.core import *
 
 
 class CircleCraters:
@@ -42,6 +47,7 @@ class CircleCraters:
         """
         # Save reference to the QGIS interface
         self.iface = iface
+        self.canvas = self.iface.mapCanvas()
         # initialize plugin directory
         self.plugin_dir = os.path.dirname(__file__)
         # initialize locale
@@ -178,10 +184,18 @@ class CircleCraters:
         """Run method that performs all the real work"""
         # show the dialog
         self.dlg.show()
+
+        layers = QgsMapLayerRegistry.instance().mapLayers().values()
+
+        for layer in layers:
+            if layer.type() == QgsMapLayer.VectorLayer:
+                self.dlg.layerCombo.addItem(layer.name(), layer)
+
         # Run the dialog event loop
         result = self.dlg.exec_()
         # See if OK was pressed
         if result:
-            # Do something useful here - delete the line containing pass and
-            # substitute with your code.
-            pass
+            index = self.dlg.layerCombo.currentIndex()
+            layer = self.dlg.layerCombo.itemData(index)
+            QMessageBox.information(self.iface.mainWindow(), "hello world", "%s has %d features." % (layer.name(), layer.featureCount()))
+            # RectangleMapTool(self.canvas)
