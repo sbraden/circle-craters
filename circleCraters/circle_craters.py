@@ -20,7 +20,7 @@
  *                                                                         *
  ***************************************************************************/
 """
-from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
+from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, SIGNAL, Qt, QObject
 from PyQt4.QtGui import QAction, QIcon
 from PyQt4.QtGui import QMessageBox
 # Initialize Qt resources from file resources.py
@@ -28,10 +28,48 @@ import resources
 # Import the code for the dialog
 from circle_craters_dialog import CircleCratersDialog
 import os.path
-from rectangle_example import RectangleMapTool
+import rectangle_example
 
 from qgis.gui import *
 from qgis.core import *
+
+
+class PointTool(QgsMapTool):
+    def __init__(self, canvas):
+        QgsMapTool.__init__(self, canvas)
+        self.canvas = canvas
+
+    def canvasPressEvent(self, event):
+        pass
+
+    # def canvasMoveEvent(self, event):
+    #     x = event.pos().x()
+    #     y = event.pos().y()
+    #     point = self.canvas.getCoordinateTransform().toMapCoordinates(x, y)
+
+    def canvasReleaseEvent(self, event):
+        #Get the click
+        x = event.pos().x()
+        y = event.pos().y()
+        print x
+        print y
+        point = self.canvas.getCoordinateTransform().toMapCoordinates(x, y)
+        print point
+
+    def activate(self):
+        pass
+
+    def deactivate(self):
+        pass
+
+    def isZoomTool(self):
+        return False
+
+    def isTransient(self):
+        return False
+
+    def isEditTool(self):
+        return True
 
 
 class CircleCraters:
@@ -47,7 +85,10 @@ class CircleCraters:
         """
         # Save reference to the QGIS interface
         self.iface = iface
+        # a reference to our map canvas (Return a pointer to the map canvas)
         self.canvas = self.iface.mapCanvas()
+        # this QGIS tool emits as QgsPoint after each click
+        self.clickTool = QgsMapToolEmitPoint(self.canvas)
         # initialize plugin directory
         self.plugin_dir = os.path.dirname(__file__)
         # initialize locale
@@ -99,7 +140,8 @@ class CircleCraters:
         add_to_toolbar=True,
         status_tip=None,
         whats_this=None,
-        parent=None):
+        parent=None,
+    ):
         """Add a toolbar icon to the toolbar.
 
         :param icon_path: Path to the icon for this action. Can be a resource
@@ -170,7 +212,18 @@ class CircleCraters:
             icon_path,
             text=self.tr(u'A crater counting tool for planetary science'),
             callback=self.run,
-            parent=self.iface.mainWindow())
+            parent=self.iface.mainWindow()
+        )
+        # A good way to connect to signals in PyQt is using this syntax:
+        # This line works!
+        print self.clickTool.canvasClicked.connect(self.handleMouseDown)
+        # rectangle_example.RectangleMapTool(self.canvas)
+
+    def handleMouseDown(self, point, button):
+        """signal canvasClicked() emits a QgsPoint. handleMouseDown() prints
+        out the point???
+        """
+        print str(point.x()) + " , " + str(point.y())
 
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
@@ -184,18 +237,49 @@ class CircleCraters:
         """Run method that performs all the real work"""
         # show the dialog
         self.dlg.show()
+        # make our clickTool the tool that we'll use for now:
+        # This line works:
+        self.canvas.setMapTool(self.clickTool)
 
-        layers = QgsMapLayerRegistry.instance().mapLayers().values()
+        # layers = QgsMapLayerRegistry.instance().mapLayers().values()
 
-        for layer in layers:
-            if layer.type() == QgsMapLayer.VectorLayer:
-                self.dlg.layerCombo.addItem(layer.name(), layer)
+        # for layer in layers:
+        #     if layer.type() == QgsMapLayer.VectorLayer:
+        #         # User selects the layer that the crater polygons go into
+        #         self.dlg.layerCombo.addItem(layer.name(), layer)
 
         # Run the dialog event loop
         result = self.dlg.exec_()
         # See if OK was pressed
         if result:
-            index = self.dlg.layerCombo.currentIndex()
-            layer = self.dlg.layerCombo.itemData(index)
-            QMessageBox.information(self.iface.mainWindow(), "hello world", "%s has %d features." % (layer.name(), layer.featureCount()))
-            # RectangleMapTool(self.canvas)
+            # Count the features in the vector layer previously selected
+            # index = self.dlg.layerCombo.currentIndex()
+            # layer = self.dlg.layerCombo.itemData(index)
+            print "Done with this shit"
+
+            # map_point = self.clickTool.toMapCoordinates(point)
+
+            # connecting a slot to ClickTool canvasClicked() signal will let
+            # you implement custom behaviour for the passed in point.
+            # print SIGNAL("canvasClicked(const QgsPoint &, Qt::MouseButton)")
+
+            # result = self.mouse_click_makes_point()
+
+            # QMessageBox.information(
+            #     self.iface.mainWindow(),
+            #     "Info",
+            #     "connect = %s" % str(result),
+            # )
+            pass
+
+
+
+    # this QGIS tool emits as QgsPoint after each click (is a constructor)
+    # self.clickTool = QgsMapToolEmitPoint(self.canvas)
+
+    # signal canvasClicked() emits a QgsPoint.
+
+    # Get three points from where the user clicks in x, y coordinates
+    # point1 = QgsPoint(startPoint.x(), startPoint.y())
+    # point2 = QgsPoint(startPoint.x(), endPoint.y())
+    # point3 = QgsPoint(endPoint.x(), endPoint.y())
