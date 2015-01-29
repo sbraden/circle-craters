@@ -255,7 +255,6 @@ class CircleCraters:
             # Count the features in the vector layer previously selected
             # index = self.dlg.layerCombo.currentIndex()
             # layer = self.dlg.layerCombo.itemData(index)
-            print "Done with this shit"
 
             # map_point = self.clickTool.toMapCoordinates(point)
 
