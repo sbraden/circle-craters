@@ -22,12 +22,11 @@
 """
 import os.path
 import math
-import collections
 
-from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
+from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, QVariant
 from PyQt4.QtGui import QAction, QIcon, QColor
 
-from qgis.core import QgsPoint, QgsGeometry, QgsFeature, QgsVectorLayer, QgsMapLayerRegistry, QgsMapLayer, QgsErrorMessage
+from qgis.core import QgsPoint, QgsGeometry, QgsFeature, QgsVectorLayer, QgsMapLayerRegistry, QgsMapLayer, QgsErrorMessage, QgsField
 from qgis.gui import QgsMapToolEmitPoint, QgsRubberBand, QgsMessageBar
 
 # Initialize Qt resources from file resources.py
@@ -35,78 +34,14 @@ import resources  # noqa
 
 # Import the code for the dialog
 from circle_craters_dialog import CircleCratersDialog
+# from choose_layers_dialog import ChooseLayersDialog
 
+from shapes import Point, Circle
 
-Point = collections.namedtuple('Point', ['x', 'y'])
-
-
-class Circle(object):
-    """ A cicle is defined by three distinct non-colinear points."""
-
-    def __init__(self, points):
-        """Input: a list of tuples
-        """
-        self.a, self.b, self.c = points
-        print repr(self)
-        self.compute_deltas()
-        self.points_too_close()
-        self.compute_line_slopes()
-        self.check_if_colinear()
-
-    def compute_deltas(self):
-        # TODO: If the points are colinear, x_delta_a will be zero and
-        # compute_line_slopes will throw an ZeroDivisionError
-        self.y_delta_a = self.b.y - self.a.y
-        self.x_delta_a = self.b.x - self.a.x
-        self.y_delta_b = self.c.y - self.b.y
-        self.x_delta_b = self.c.x - self.b.x
-
-    def compute_line_slopes(self):
-        self.a_slope = self.y_delta_a / self.x_delta_a
-        self.b_slope = self.y_delta_b / self.x_delta_b
-
-    def check_if_colinear(self):
-        if abs(self.a_slope - self.b_slope) <= 0.000000001:
-            # TODO: this should be printed as a message to the user in QGIS
-            QgsErrorMessage('The three points are colinear. Cannot compute circle.\n')
-            # TODO: clear the 3 points
-
-    def points_too_close(self):
-        if self.is_small(self.x_delta_a) & self.is_small(self.y_delta_b):
-            # TODO: this should be printed as a message to the user in QGIS
-            QgsErrorMessage('The points are too close together. Cannot compute circle.\n')
-            # TODO: clear the 3 points
-
-    def is_small(self, value):
-        return abs(value) <= 0.000000001
-
-    def radius(self):
-        return self.distance(self.center, self.a)
-
-    def diameter(self):
-        return self.radius() * 2
-
-    def distance(self, point_1, point_2):
-        part_1 = math.pow((point_1.x - point_2.x), 2)
-        part_2 = math.pow((point_1.y - point_2.y), 2)
-        return math.sqrt(part_1 + part_2)
-
-    def get_center(self):
-        # TODO: this function is too long
-
-        part_1 = self.a_slope * self.b_slope * (self.a.y - self.c.y)
-        part_2 = self.b_slope * (self.a.x + self.b.x)
-        part_3 = self.a_slope * (self.b.x + self.c.x)
-
-        center_x = (part_1 + part_2 - part_3) / (2 * (self.b_slope - self.a_slope))
-        a_b_midpoint = Point((self.a.x + self.b.x) / 2, (self.a.y + self.b.y) / 2)
-        center_y = -1 * (center_x - a_b_midpoint.x) / self.a_slope + a_b_midpoint.y
-
-        self.center = Point(center_x, center_y)
-        return self.center
-
-    def __repr__(self):
-        return 'Point(%r, %r, %r)' % (self.a, self.b, self.c)
+# TODO: Make it so that the user creates and selects the vector layer
+# TODO: Make it so that the features are saved to the layer after creation
+# TODO: Save crater diameter in units of meters to attribute table
+# TODO: Write new implementation of Circle class
 
 
 class CircleCraters(object):
@@ -142,7 +77,8 @@ class CircleCraters(object):
                 QCoreApplication.installTranslator(self.translator)
 
         # Create the dialog (after translation) and keep reference
-        self.dlg = CircleCratersDialog()
+        self.dlg = CircleCratersDialog()  # TODO: rename to export_dlg
+        # self.choose_dlg = ChooseLayersDialog()
 
         # Declare instance attributes
         self.actions = []
@@ -290,11 +226,11 @@ class CircleCraters(object):
         if len(self.clicks) != 3:
             return
 
-        circle = Circle(self.clicks)
+        circle = Circle(self.clicks[0], self.clicks[1], self.clicks[2])
 
         # must be called in this order
-        center = circle.get_center()
-        radius = circle.radius()
+        center = circle.center
+        radius = circle.radius
 
         # radius is set to 50
         self.draw_circle(center.x, center.y, radius)
@@ -306,6 +242,12 @@ class CircleCraters(object):
     def set_tool(self):
         """Run method that performs all the real work"""
         self.canvas.setMapTool(self.tool)
+
+    def prep_tool(self):
+        """ Run method that lets users choose layer for crater shapefile."""
+        # self.dlg.show()
+        # ChooseLayersDialog
+        return NotImplementedError
 
     def write_file(self, directory, filename):
         if os.path.exists(directory):
@@ -349,7 +291,23 @@ class CircleCraters(object):
 
         feature = QgsFeature()
         feature.setGeometry(geometry)
+        feature.setAttributes([r * 2, x, y])
 
-        self.layer.addFeature(feature)
+        # Do I need to do this every time? Probably not.
+        field_attributes_list = [
+            QgsField('diameter', QVariant.Double),  # TODO: What units?
+            QgsField('center_latitude', QVariant.Double),
+            QgsField('center_longitude', QVariant.Double),
+        ]
+        result = self.layer.dataProvider().addAttributes(field_attributes_list)
+        self.layer.updateFields()
+
+        if self.layer.isEditable():
+            print 'layer is in editing mode'
+        else:
+            print 'layer is NOT in editing mode'
+
+        (result, feat_list) = self.layer.dataProvider().addFeatures([feature])
+        # self.layer.addFeature(feature)  Don't use this
+
         self.rb.setToGeometry(geometry, None)
-        print 'Circle should be there.'

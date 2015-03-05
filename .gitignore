@@ -2,3 +2,4 @@ help
 *.pyc
 *.csv
 *.pickle
+resources_rc.py
