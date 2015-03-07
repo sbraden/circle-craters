@@ -3,5 +3,7 @@
         <file>icon.png</file>
         <file>export.png</file>
         <file>3points.png</file>
+        <file>start.png</file>
+        <file>stop.png</file>
     </qresource>
 </RCC>
