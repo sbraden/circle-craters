@@ -314,15 +314,15 @@ class CircleCraters(object):
     def set_field_attributes(self):
         if self.layer.fieldNameIndex('diameter') == -1:
             field_attribute = [QgsField('diameter', QVariant.Double)]
-            result = self.layer.dataProvider().addAttributes(field_attribute)
+            self.layer.dataProvider().addAttributes(field_attribute)
 
         if self.layer.fieldNameIndex('center_lat') == -1:
             field_attribute = [QgsField('center_lat', QVariant.Double)]
-            result = self.layer.dataProvider().addAttributes(field_attribute)
+            self.layer.dataProvider().addAttributes(field_attribute)
 
         if self.layer.fieldNameIndex('center_lon') == -1:
             field_attribute = [QgsField('center_lon', QVariant.Double)]
-            result = self.layer.dataProvider().addAttributes(field_attribute)
+            self.layer.dataProvider().addAttributes(field_attribute)
 
         # TODO: decide what to do with useless useless 'id' field.
         # self.layer.dataProvider().deleteAttributes([0])
