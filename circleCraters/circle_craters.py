@@ -39,8 +39,8 @@ from choose_layers_dialog import ChooseLayersDialog
 from shapes import Point, Circle
 
 # TODO: total area must be in km^2
-# TODO: Ensure conversion between CRS
-# TODO: Save crater diameter in units of meters to attribute table
+# TODO: Test conversion between CRS
+# TODO: Fix the set_attributes bug where the attributes get set multiple times
 
 # TODO: test area and distance measurements for accuracy
 # TODO: Handle intersection of crater centers and area layers
@@ -297,7 +297,7 @@ class CircleCraters(object):
 
     def set_field_attributes(self):
         field_attributes_list = [
-            QgsField('diameter', QVariant.Double),  # TODO: What units?
+            QgsField('diameter', QVariant.Double),
             QgsField('center_latitude', QVariant.Double),
             QgsField('center_longitude', QVariant.Double),
         ]
@@ -349,6 +349,8 @@ class CircleCraters(object):
             total_area = self.compute_area()
             print 'Area in meters squared: ', total_area
             header_lines = self.create_diam_header(total_area)
+            # This is where you will check for intersection
+            self.check_for_intersection()
             nested_list = self.format_diam_data()
 
             # table delimited datafile
@@ -383,6 +385,14 @@ class CircleCraters(object):
         areas = [self.area(d, f) for f in features]
         return sum(areas)
 
+    def check_for_intersection(self):
+
+        features = self.area_export_layer.getFeatures()
+        for f in features:
+            points = self.crater_export_layer.getFeatures()
+            for p in points:
+                print f.geometry().intersects(p.geometry())
+
     def get_fields(self, feature, diameter, lon, lat):
         """Retrieves fields from the attribute table in the order required
         for .diam file: diameter, fraction, lon, lat
@@ -399,6 +409,17 @@ class CircleCraters(object):
             str(attributes[lat]),
         ]
         return field_list
+
+    def convert_diam_to_meters(self, feature):
+        # Call up the CRS
+        provider = self.layer.dataProvider()
+        crs = provider.crs()
+        d = QgsDistanceArea()
+        d.setSourceCrs(crs)
+        d.setEllipsoid(crs.ellipsoidAcronym())
+        d.setEllipsoidalMode(crs.geographicFlag())
+
+        return d.measure(feature.geometry())
 
     def format_diam_data(self):
         """Formats crater diameter data for export as .diam file"""
@@ -422,8 +443,19 @@ class CircleCraters(object):
 
         feature = QgsFeature()
         feature.setGeometry(geometry)
+
+        # Create a line geometry to represent radius
+        radius_line = [QgsPoint(0.0, 0.0), QgsPoint(0.0, r)]
+        print radius_line
+        radius_geometry = QgsGeometry.fromPolyline(radius_line)
+        line = QgsFeature()
+        line.setGeometry(radius_geometry)
+
+        radius_in_meters = self.convert_diam_to_meters(line)
+        print 'Radius in meters:', radius_in_meters
+
         # feature.id() is NULL right now
-        feature.setAttributes([feature.id(), r * 2, x, y])
+        feature.setAttributes([feature.id(), radius_in_meters * 2, x, y])
 
         self.layer.startEditing()
 
