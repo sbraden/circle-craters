@@ -31,7 +31,7 @@ from qgis.core import QgsPoint, QgsGeometry, QgsFeature, QgsMapLayerRegistry, Qg
 from qgis.gui import QgsMapToolEmitPoint, QgsRubberBand
 
 # Initialize Qt resources from file resources.py
-import resources  # noqa
+import resources_rc  # noqa
 
 from circle_craters_dialog import CircleCratersDialog
 from choose_layers_dialog import ChooseLayersDialog

@@ -39,18 +39,24 @@ LOCALES =
 SOURCES = \
 	__init__.py \
 	circle_craters.py \
-	circle_craters_dialog.py
+	circle_craters_dialog.py \
+	choose_layers_dialog.py \
+	shapes.py
 
 PLUGINNAME = CircleCraters
 
 PY_FILES = \
 	circle_craters.py \
 	circle_craters_dialog.py \
+	choose_layers_dialog.py \
+	shapes.py \
 	__init__.py
 
-UI_FILES = circle_craters_dialog_base.ui
+UI_FILES = \
+	circle_craters_dialog_base.ui \
+	choose_layers_dialog.ui
 
-EXTRAS = icon.png metadata.txt
+EXTRAS = icon.png export.png start.png stop.png metadata.txt
 
 COMPILED_RESOURCE_FILES = resources_rc.py
 
