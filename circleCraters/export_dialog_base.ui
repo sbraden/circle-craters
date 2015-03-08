@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>CircleCratersDialogBase</class>
- <widget class="QDialog" name="CircleCratersDialogBase">
+ <class>ExportDialogBase</class>
+ <widget class="QDialog" name="ExportDialogBase">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Circle Craters</string>
+   <string>Circle Craters Export</string>
   </property>
   <widget class="QDialogButtonBox" name="button_box">
    <property name="geometry">
@@ -127,7 +127,7 @@
   <connection>
    <sender>button_box</sender>
    <signal>accepted()</signal>
-   <receiver>CircleCratersDialogBase</receiver>
+   <receiver>ExportDialogBase</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -143,7 +143,7 @@
   <connection>
    <sender>button_box</sender>
    <signal>rejected()</signal>
-   <receiver>CircleCratersDialogBase</receiver>
+   <receiver>ExportDialogBase</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">

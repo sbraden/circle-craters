@@ -58,7 +58,7 @@ from qgis.gui import (
 # Initialize Qt resources from file resources.py
 import resources_rc  # noqa
 
-from circle_craters_dialog import CircleCratersDialog
+from export_dialog import ExportDialog
 from choose_layers_dialog import ChooseLayersDialog
 
 from shapes import Point, Circle
@@ -105,7 +105,7 @@ class CircleCraters(object):
                 QCoreApplication.installTranslator(self.translator)
 
         # Create the dialog (after translation) and keep reference
-        self.export_dlg = CircleCratersDialog()
+        self.export_dlg = ExportDialog()
         self.choose_dlg = ChooseLayersDialog()
         self.choose_dlg.selected.connect(self.on_layer_select)
 

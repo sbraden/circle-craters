@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 /***************************************************************************
- CircleCratersDialog
+ ChooseLayersDialog
                                  A QGIS plugin
  A crater counting tool for planetary science
                              -------------------
@@ -27,11 +27,11 @@ from PyQt4 import QtGui, QtCore, uic
 from qgis.core import QgsMapLayer, QgsMapLayerRegistry
 
 
-FORM_CLASS, _ = uic.loadUiType(os.path.join(
-    os.path.dirname(__file__), 'choose_layers_dialog.ui'))
+ChooseLayersDialogBase, _ = uic.loadUiType(os.path.join(
+    os.path.dirname(__file__), 'choose_layers_dialog_base.ui'))
 
 
-class ChooseLayersDialog(QtGui.QDialog, FORM_CLASS):
+class ChooseLayersDialog(QtGui.QDialog, ChooseLayersDialogBase):
     selected = QtCore.pyqtSignal(object, object)
 
     def __init__(self, parent=None):
