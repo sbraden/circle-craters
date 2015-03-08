@@ -24,11 +24,36 @@ import os.path
 import math
 import datetime
 
-from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, QVariant
-from PyQt4.QtGui import QAction, QIcon, QColor
 
-from qgis.core import QgsPoint, QgsGeometry, QgsFeature, QgsMapLayerRegistry, QgsVectorLayer, QgsMapLayer, QgsErrorMessage, QgsField, QgsDistanceArea
-from qgis.gui import QgsMapToolEmitPoint, QgsRubberBand
+from PyQt4.QtCore import (
+    QCoreApplication,
+    QSettings,
+    QTranslator,
+    QVariant,
+    qVersion,
+)
+
+from PyQt4.QtGui import (
+    QAction,
+    QColor,
+    QIcon,
+)
+
+from qgis.core import (
+    QgsDistanceArea,
+    QgsFeature,
+    QgsField,
+    QgsGeometry,
+    QgsMapLayer,
+    QgsMapLayerRegistry,
+    QgsPoint,
+)
+
+from qgis.gui import (
+    QgsMapToolEmitPoint,
+    QgsMessageBar,
+    QgsRubberBand,
+)
 
 # Initialize Qt resources from file resources.py
 import resources_rc  # noqa
