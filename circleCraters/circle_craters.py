@@ -105,8 +105,7 @@ class CircleCraters(object):
                 QCoreApplication.installTranslator(self.translator)
 
         # Create the dialog (after translation) and keep reference
-        # TODO: rename to export_dlg
-        self.dlg = CircleCratersDialog()
+        self.export_dlg = CircleCratersDialog()
         self.choose_dlg = ChooseLayersDialog()
         self.choose_dlg.selected.connect(self.on_layer_select)
 
@@ -333,26 +332,26 @@ class CircleCraters(object):
 
     def export_tool(self):
         """ Run method that exports data to a file"""
-        self.dlg.show()
+        self.export_dlg.show()
         # Fetch all loaded layers
         layers = QgsMapLayerRegistry.instance().mapLayers().values()
         for layer in layers:
             if layer.type() == QgsMapLayer.VectorLayer:
                 # Add these layers to the combobox (dropdown menu)
-                self.dlg.craterLayer.addItem(layer.name(), layer)
-                self.dlg.areaLayer.addItem(layer.name(), layer)
+                self.export_dlg.craterLayer.addItem(layer.name(), layer)
+                self.export_dlg.areaLayer.addItem(layer.name(), layer)
 
         # Run the dialog event loop
-        result = self.dlg.exec_()
+        result = self.export_dlg.exec_()
         # See if OK was pressed
         if result == 1:
-            crater_index = self.dlg.craterLayer.currentIndex()
-            self.crater_export_layer = self.dlg.craterLayer.itemData(crater_index)
+            crater_index = self.export_dlg.craterLayer.currentIndex()
+            self.crater_export_layer = self.export_dlg.craterLayer.itemData(crater_index)
 
-            area_index = self.dlg.areaLayer.currentIndex()
-            self.area_export_layer = self.dlg.areaLayer.itemData(area_index)
+            area_index = self.export_dlg.areaLayer.currentIndex()
+            self.area_export_layer = self.export_dlg.areaLayer.itemData(area_index)
 
-            self.write_diam_file(self.dlg.editDirectory.text(), self.dlg.editFilename.text())
+            self.write_diam_file(self.export_dlg.editDirectory.text(), self.export_dlg.editFilename.text())
 
     def create_diam_header(self, total_area):
         current_datetime = str(datetime.datetime.now())
