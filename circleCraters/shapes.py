@@ -98,7 +98,7 @@ class Line(object):
 
 
 class Circle(object):
-    def __init__(self, *vertices):  # The * collects all arguments in a tuple
+    def __init__(self, *vertices):
         if len(vertices) != 3:
             raise ValueError('a circle must have three vertices')
 
