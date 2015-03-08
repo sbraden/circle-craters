@@ -38,12 +38,13 @@ from choose_layers_dialog import ChooseLayersDialog
 
 from shapes import Point, Circle
 
-# TODO: total area must be in km^2
-# TODO: Test conversion between CRS
-# TODO: Fix the set_attributes bug where the attributes get set multiple times
-
-# TODO: test area and distance measurements for accuracy
 # TODO: Handle intersection of crater centers and area layers
+# TODO: total area must be in km^2 for the .diam file
+
+# TODO: Test conversion between CRS
+# TODO: test area and distance measurements for accuracy
+# TODO: Flatten git repos: Tests and Makefile should be in the top directory
+# TODO: get new icons
 
 
 class CircleCraters(object):
@@ -296,15 +297,25 @@ class CircleCraters(object):
             self.set_tool()
 
     def set_field_attributes(self):
-        field_attributes_list = [
-            QgsField('diameter', QVariant.Double),
-            QgsField('center_latitude', QVariant.Double),
-            QgsField('center_longitude', QVariant.Double),
-        ]
+        if self.layer.fieldNameIndex('diameter') == -1:
+            field_attribute = [QgsField('diameter', QVariant.Double)]
+            result = self.layer.dataProvider().addAttributes(field_attribute)
+
+        if self.layer.fieldNameIndex('center_lat') == -1:
+            field_attribute = [QgsField('center_lat', QVariant.Double)]
+            result = self.layer.dataProvider().addAttributes(field_attribute)
+
+        if self.layer.fieldNameIndex('center_lon') == -1:
+            field_attribute = [QgsField('center_lon', QVariant.Double)]
+            result = self.layer.dataProvider().addAttributes(field_attribute)
+
         # removes useless 'id' field,
         # could cause problems if 'id' field doesn't exist, which it wouldn't if the file has already been edited
         # self.layer.dataProvider().deleteAttributes([0])
-        result = self.layer.dataProvider().addAttributes(field_attributes_list)
+
+        # print self.layer.dataProvider().attributeIndexes()
+        # print self.layer.dataProvider().fields()
+
         self.layer.updateFields()
 
     def export_tool(self):
@@ -425,8 +436,8 @@ class CircleCraters(object):
         """Formats crater diameter data for export as .diam file"""
         features = self.crater_export_layer.getFeatures()
         diameter = self.crater_export_layer.fieldNameIndex('diameter')
-        lat = self.crater_export_layer.fieldNameIndex('center_latitude')
-        lon = self.crater_export_layer.fieldNameIndex('center_longitude')
+        lat = self.crater_export_layer.fieldNameIndex('center_lat')
+        lon = self.crater_export_layer.fieldNameIndex('center_lon')
 
         data = [self.get_fields(f, diameter, lon, lat) for f in features]
         return data
