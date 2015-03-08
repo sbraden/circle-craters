@@ -108,6 +108,7 @@ class CircleCraters(object):
         # TODO: rename to export_dlg
         self.dlg = CircleCratersDialog()
         self.choose_dlg = ChooseLayersDialog()
+        self.choose_dlg.selected.connect(self.on_layer_select)
 
         # Declare instance attributes
         self.actions = []
@@ -142,6 +143,14 @@ class CircleCraters(object):
         """
         # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
         return QCoreApplication.translate('CircleCraters', message)
+
+    def show_error(self, message, title='Error', **kwargs):
+        self.iface.messageBar().pushMessage(
+            title, message, level=QgsMessageBar.CRITICAL, **kwargs)
+
+    def show_info(self, message, **kwargs):
+        self.iface.messageBar().pushMessage(
+            message, level=QgsMessageBar.INFO, **kwargs)
 
     def add_action(
         self,
@@ -223,7 +232,7 @@ class CircleCraters(object):
         self.add_action(
             ':/plugins/CircleCraters/start.png',
             text=self.tr(u'Select Layers for Crater Counting'),
-            callback=self.prep_tool,
+            callback=self.show_layer_select,
             parent=self.iface.mainWindow(),
         )
 
@@ -272,54 +281,35 @@ class CircleCraters(object):
 
     def set_tool(self):
         """Run method that performs all the real work"""
-        if self.layer:
-            self.canvas.setMapTool(self.tool)
-        else:
-            msg = 'No crater counting layer selected. Please choose a layer.'
-            self.iface.messageBar().pushMessage('User Error:', msg)
+        if not self.layer:
+            error = 'No crater counting layer selected. Please choose a layer.'
+            self.show_error(error)
+        self.canvas.setMapTool(self.tool)
 
     def stop_tool(self):
         """Run method that deactivates the crater counting tool"""
         self.canvas.unsetMapTool(self.tool)
         self.layer = None
 
-    def prep_tool(self):
+    def show_layer_select(self):
         """ Run method that lets users choose layer for crater shapefile.
         Sets self.layer
         """
-        self.choose_dlg.show()
-        # Fetch all loaded layers
-        layers = QgsMapLayerRegistry.instance().mapLayers().values()
-        for layer in layers:
-            if layer.type() == QgsMapLayer.VectorLayer:
-                # Add these layers to the combobox (dropdown menu)
-                self.choose_dlg.craterLayer.addItem(layer.name(), layer)
-                self.choose_dlg.areaLayer.addItem(layer.name(), layer)
+        try:
+            self.choose_dlg.show()
+        except Exception as error:
+            self.show_error(error.message)
 
-        # Run the dialog event loop
-        result = self.choose_dlg.exec_()
+    def on_layer_select(self, crater_layer, area_layer):
+        print 'Area Layer name:', area_layer.name()
 
-        # See if OK was pressed
-        if result == 1:
+        self.layer = crater_layer
+        self.set_field_attributes()
 
-            if self.choose_dlg.craterLayer.currentIndex() == -1:
-                msg = 'No choice of layers available. Please create polygon type vector layers.'
-                self.iface.messageBar().pushMessage('User Error', msg)
-                return
+        msg = 'The layer {!r} is set as the crater counting layer'
+        self.show_info(msg.format(crater_layer.name()))
 
-            crater_index = self.choose_dlg.craterLayer.currentIndex()
-            crater_layer = self.choose_dlg.craterLayer.itemData(crater_index)
-            area_index = self.choose_dlg.areaLayer.currentIndex()
-            area_layer = self.choose_dlg.areaLayer.itemData(area_index)
-            print 'Area Layer name:', area_layer.name()
-
-            self.layer = crater_layer
-            self.set_field_attributes()
-
-            msg = 'The layer: "{}" is set as the crater counting layer'.format(crater_layer.name())
-            self.iface.messageBar().pushMessage('Info', msg)
-
-            self.set_tool()
+        self.set_tool()
 
     def set_field_attributes(self):
         if self.layer.fieldNameIndex('diameter') == -1:

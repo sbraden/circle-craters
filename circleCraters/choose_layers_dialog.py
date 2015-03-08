@@ -23,13 +23,17 @@
 
 import os
 
-from PyQt4 import QtGui, uic
+from PyQt4 import QtGui, QtCore, uic
+from qgis.core import QgsMapLayer, QgsMapLayerRegistry
+
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'choose_layers_dialog.ui'))
 
 
 class ChooseLayersDialog(QtGui.QDialog, FORM_CLASS):
+    selected = QtCore.pyqtSignal(object, object)
+
     def __init__(self, parent=None):
         """Constructor."""
         super(ChooseLayersDialog, self).__init__(parent)
@@ -39,3 +43,42 @@ class ChooseLayersDialog(QtGui.QDialog, FORM_CLASS):
         # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
+        self.accepted.connect(self.on_accept)
+
+    def get_choices(self):
+        # Fetch all loaded layers
+        layers = QgsMapLayerRegistry.instance().mapLayers().values()
+        return [l for l in layers if l.type() == QgsMapLayer.VectorLayer]
+
+    def show(self):
+        choices = self.get_choices()
+        if not choices:
+            raise Exception(
+                'No choice of layers available. '
+                'Please create polygon type vector layers.'
+            )
+
+        self.craterLayer.clear()
+        self.areaLayer.clear()
+
+        for layer in choices:
+            # Add these layers to the combobox (dropdown menu)
+            self.craterLayer.addItem(layer.name(), layer)
+            self.areaLayer.addItem(layer.name(), layer)
+
+        super(ChooseLayersDialog, self).show()
+
+    def _get_layer(self, selector):
+        index = selector.currentIndex()
+        if index == -1:
+            return None
+        return selector.itemData(index)
+
+    def get_crater_layer(self):
+        return self._get_layer(self.craterLayer)
+
+    def get_area_layer(self):
+        return self._get_layer(self.areaLayer)
+
+    def on_accept(self):
+        self.selected.emit(self.get_crater_layer(), self.get_area_layer())
