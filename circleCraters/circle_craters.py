@@ -27,7 +27,7 @@ import datetime
 from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, QVariant
 from PyQt4.QtGui import QAction, QIcon, QColor
 
-from qgis.core import QgsPoint, QgsGeometry, QgsFeature, QgsMapLayerRegistry, QgsMapLayer, QgsErrorMessage, QgsField, QgsDistanceArea
+from qgis.core import QgsPoint, QgsGeometry, QgsFeature, QgsMapLayerRegistry, QgsVectorLayer, QgsMapLayer, QgsErrorMessage, QgsField, QgsDistanceArea
 from qgis.gui import QgsMapToolEmitPoint, QgsRubberBand
 
 # Initialize Qt resources from file resources.py
@@ -309,10 +309,8 @@ class CircleCraters(object):
             field_attribute = [QgsField('center_lon', QVariant.Double)]
             result = self.layer.dataProvider().addAttributes(field_attribute)
 
-        # removes useless 'id' field,
-        # could cause problems if 'id' field doesn't exist, which it wouldn't if the file has already been edited
+        # TODO: decide what to do with useless useless 'id' field.
         # self.layer.dataProvider().deleteAttributes([0])
-
         # print self.layer.dataProvider().attributeIndexes()
         # print self.layer.dataProvider().fields()
 
@@ -360,11 +358,9 @@ class CircleCraters(object):
             total_area = self.compute_area()
             print 'Area in meters squared: ', total_area
             header_lines = self.create_diam_header(total_area)
-            # This is where you will check for intersection
-            self.check_for_intersection()
             nested_list = self.format_diam_data()
 
-            # table delimited datafile
+            # tab delimited datafile
             with open(os.path.join(directory, filename + '.diam'), 'w') as f:
                 for line in header_lines:
                     f.write(line)
@@ -396,14 +392,6 @@ class CircleCraters(object):
         areas = [self.area(d, f) for f in features]
         return sum(areas)
 
-    def check_for_intersection(self):
-
-        features = self.area_export_layer.getFeatures()
-        for f in features:
-            points = self.crater_export_layer.getFeatures()
-            for p in points:
-                print f.geometry().intersects(p.geometry())
-
     def get_fields(self, feature, diameter, lon, lat):
         """Retrieves fields from the attribute table in the order required
         for .diam file: diameter, fraction, lon, lat
@@ -432,15 +420,22 @@ class CircleCraters(object):
 
         return d.measure(feature.geometry())
 
+    def intersects(self, areas, crater):
+        return any(a.geometry().intersects(crater.geometry()) for a in areas)
+
     def format_diam_data(self):
-        """Formats crater diameter data for export as .diam file"""
-        features = self.crater_export_layer.getFeatures()
+        """Formats crater diameter data for export as .diam file
+        Checks to see if craters intersect with area polygons in area layer
+        """
         diameter = self.crater_export_layer.fieldNameIndex('diameter')
         lat = self.crater_export_layer.fieldNameIndex('center_lat')
         lon = self.crater_export_layer.fieldNameIndex('center_lon')
 
-        data = [self.get_fields(f, diameter, lon, lat) for f in features]
-        return data
+        craters = list(self.crater_export_layer.getFeatures())
+        areas = list(self.area_export_layer.getFeatures())
+
+        craters = [c for c in craters if self.intersects(areas, c)]
+        return [self.get_fields(c, diameter, lon, lat) for c in craters]
 
     def generate_circle(self, x, y, r):
         segments = 64
