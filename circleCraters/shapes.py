@@ -1,6 +1,35 @@
 import math
 
 
+class cached_property(object):  # noqa
+    """ A property that is only computed once per instance and then replaces
+        itself with an ordinary attribute. Deleting the attribute resets the
+        property.
+    """
+
+    def __init__(self, func):
+        self.func = func
+        self.__doc__ = func.__doc__
+        self.__name__ = func.__name__
+        self.__module__ = func.__module__
+
+    def __set__(self, obj, value):
+        obj.__dict__[self.__name__] = value
+
+    def __get__(self, obj, type=None):
+        if obj is None:
+            return self
+
+        try:
+            return obj.__dict__[self.__name__]
+        except KeyError:
+            pass
+
+        value = self.func(obj)
+        obj.__dict__[self.__name__] = value
+        return value
+
+
 class Point(object):
     def __init__(self, x, y):
         self.x = x
@@ -58,15 +87,15 @@ class Line(object):
             raise ValueError('a line must have two points')
         self.points = points
 
-    @property
+    @cached_property
     def length(self):
         return math.sqrt(sum([delta ** 2 for delta in self.delta]))
 
-    @property
+    @cached_property
     def midpoint(self):
         return (self.points[0] + self.points[1]) * 0.5
 
-    @property
+    @cached_property
     def delta(self):
         return self.points[0] - self.points[1]
 
@@ -107,13 +136,13 @@ class Circle(object):
 
         self.vertices = vertices
 
-    @property
+    @cached_property
     def center(self):
         a = Line(self.vertices[0], self.vertices[1]).perpendicular_bisector()
         b = Line(self.vertices[1], self.vertices[2]).perpendicular_bisector()
         return a.intersection(b)
 
-    @property
+    @cached_property
     def radius(self):
         return Line(self.center, self.vertices[0]).length
 
