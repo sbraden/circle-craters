@@ -32,7 +32,7 @@ ChooseLayersDialogBase, _ = uic.loadUiType(os.path.join(
 
 
 class ChooseLayersDialog(QtGui.QDialog, ChooseLayersDialogBase):
-    selected = QtCore.pyqtSignal(object, object)
+    selected = QtCore.pyqtSignal(object)
 
     def __init__(self, parent=None):
         """Constructor."""
@@ -58,27 +58,16 @@ class ChooseLayersDialog(QtGui.QDialog, ChooseLayersDialogBase):
                 'Please create polygon type vector layers.'
             )
 
-        self.craterLayer.clear()
-        self.areaLayer.clear()
+        self.layer_select.clear()
 
         for layer in choices:
             # Add these layers to the combobox (dropdown menu)
-            self.craterLayer.addItem(layer.name(), layer)
-            self.areaLayer.addItem(layer.name(), layer)
+            self.layer_select.addItem(layer.name(), layer)
 
         super(ChooseLayersDialog, self).show()
 
-    def _get_layer(self, selector):
-        index = selector.currentIndex()
-        if index == -1:
-            return None
-        return selector.itemData(index)
-
-    def get_crater_layer(self):
-        return self._get_layer(self.craterLayer)
-
-    def get_area_layer(self):
-        return self._get_layer(self.areaLayer)
+    def get_layer(self):
+        return self.layer_select.itemData(self.layer_select.currentIndex())
 
     def on_accept(self):
-        self.selected.emit(self.get_crater_layer(), self.get_area_layer())
+        self.selected.emit(self.get_layer())

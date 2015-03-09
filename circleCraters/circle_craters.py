@@ -288,12 +288,12 @@ class CircleCraters(object):
         except Exception as error:
             self.show_error(error.message)
 
-    def on_layer_select(self, crater_layer, area_layer):
-        self.layer = crater_layer
+    def on_layer_select(self, layer):
+        self.layer = layer
         self.set_field_attributes()
 
         msg = 'The layer "{!s}" is set as the crater counting layer'
-        self.show_info(msg.format(crater_layer.name()))
+        self.show_info(msg.format(layer.name()))
 
         self.set_tool()
 
