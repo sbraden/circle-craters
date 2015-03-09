@@ -260,12 +260,10 @@ class CircleCraters(object):
 
     def handle_click(self, point, button):
         self.clicks.append(Point(point.x(), point.y()))
-        print 'pop'
 
         if len(self.clicks) != 3:
             return
 
-        print self.clicks
         self.draw_circle(Circle(*self.clicks))
         self.reset_clicks()
 
