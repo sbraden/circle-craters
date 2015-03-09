@@ -62,13 +62,10 @@ from .export_dialog import ExportDialog
 from .choose_layers_dialog import ChooseLayersDialog
 
 
-# TODO: Intersect on crater centers instead of crater polygons
+# BUGFIX: crater diameters are no longer in meters after changing crs() call in get_distance_area
 # TODO: total area must be in km^2 for the .diam file
-
 # TODO: Test conversion between CRS
 # TODO: test area and distance measurements for accuracy
-# TODO: Flatten git repos: Tests and Makefile should be in the top directory
-# TODO: get new icons
 
 
 class CircleCraters(object):
@@ -378,12 +375,20 @@ class CircleCraters(object):
 
     def get_distance_area(self, layer):
         # Call up the CRS
-        crs = layer.dataProvider().crs()
-        print crs
+        crs = layer.crs()
+
         print crs.description()
-        print crs.mapUnits()
         print crs.isValid()
         print crs.toProj4()
+        print "Projection Acronym:", crs.projectionAcronym()
+        print "Ellipsoid Acronym:", crs.ellipsoidAcronym()
+        # print "Proj4 String:", crs.proj4String()
+        # check whether it's geographic or projected coordinate system
+        print "Is geographic:", crs.geographicFlag()
+        # check type of map units in this CRS (values defined in QGis::units enum)
+        # Meters = 0, Feet = 1, Degrees = 2, UnknownUnit = 3, DecimalDegrees = 2
+        print "Map units:", crs.mapUnits()
+
         distance_area = QgsDistanceArea()
         distance_area.setSourceCrs(crs)
         distance_area.setEllipsoid(crs.ellipsoidAcronym())
@@ -428,9 +433,16 @@ class CircleCraters(object):
         geometry = QgsGeometry.fromPolyline(line)
         return self.measure(layer, geometry)
 
-    def intersects(self, crater, areas):
-        geometry = crater.geometry()
-        return any(geometry.intersects(area.geometry()) for area in areas)
+    def crater_center(self, crater, lat, lon):
+        center_point = QgsPoint(
+            crater.attributes()[lon],
+            crater.attributes()[lat],
+        )
+        return QgsGeometry.fromPoint(center_point)
+
+    def intersects(self, crater, areas, lat, lon):
+        center_geometry = self.crater_center(crater, lat, lon)
+        return any(center_geometry.intersects(a.geometry()) for a in areas)
 
     def format_diam_data(self, crater_layer, area_layer):
         """Formats crater diameter data for export as .diam file
@@ -443,7 +455,7 @@ class CircleCraters(object):
         craters = list(crater_layer.getFeatures())
         areas = list(area_layer.getFeatures())
 
-        craters = [c for c in craters if self.intersects(c, areas)]
+        craters = [c for c in craters if self.intersects(c, areas, lat, lon)]
         return [self.get_fields(c, diameter, lon, lat) for c in craters]
 
     def draw_circle(self, circle):
