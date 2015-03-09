@@ -121,11 +121,6 @@ class CircleCraters(object):
         self.tool.deactivated.connect(self.reset_clicks)
         self.clicks = []
 
-        self.rb = QgsRubberBand(self.canvas, True)
-        self.rb.setBorderColor(QColor(255, 0, 0))
-        self.rb.setFillColor(QColor(0, 0, 0, 0))
-        self.rb.setWidth(1)
-
         self.layer = None
 
     # noinspection PyMethodMayBeStatic
@@ -480,7 +475,6 @@ class CircleCraters(object):
         self.layer.startEditing()
 
         (result, feat_list) = self.layer.dataProvider().addFeatures([feature])
-        self.rb.setToGeometry(geometry, None)
 
         # commit to stop editing the layer
         self.layer.commitChanges()
