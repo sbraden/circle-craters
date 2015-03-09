@@ -53,13 +53,14 @@ from qgis.gui import (
 )
 
 # Initialize Qt resources from file resources.py
-import .resources_rc  # noqa
+from . import resources_rc  # noqa
+
 from .errors import CircleCraterError
+from .shapes import Point, Circle
 
-from export_dialog import ExportDialog
-from choose_layers_dialog import ChooseLayersDialog
+from .export_dialog import ExportDialog
+from .choose_layers_dialog import ChooseLayersDialog
 
-from shapes import Point, Circle
 
 # TODO: Intersect on crater centers instead of crater polygons
 # TODO: total area must be in km^2 for the .diam file

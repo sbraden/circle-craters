@@ -38,20 +38,21 @@ LOCALES =
 # translation
 SOURCES = \
 	__init__.py \
-	circle_craters.py \
-	export_dialog.py \
 	choose_layers_dialog.py \
-	shapes.py \
-	errors.py
+	circle_craters.py \
+	errors.py \
+	export_dialog.py \
+	shapes.py
 
 PLUGINNAME = CircleCraters
 
 PY_FILES = \
-	circle_craters.py \
-	export_dialog.py \
+	__init__.py \
 	choose_layers_dialog.py \
-	shapes.py \
-	__init__.py
+	circle_craters.py \
+	errors.py \
+	export_dialog.py \
+	shapes.py
 
 UI_FILES = \
 	export_dialog_base.ui \
