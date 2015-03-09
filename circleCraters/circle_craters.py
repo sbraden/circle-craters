@@ -50,7 +50,8 @@ from qgis.gui import (
 )
 
 # Initialize Qt resources from file resources.py
-import resources_rc  # noqa
+import .resources_rc  # noqa
+from .errors import CircleCraterError
 
 from export_dialog import ExportDialog
 from choose_layers_dialog import ChooseLayersDialog
@@ -289,7 +290,7 @@ class CircleCraters(object):
         """
         try:
             self.choose_dlg.show()
-        except Exception as error:
+        except CircleCraterError as error:
             self.show_error(error.message)
 
     def on_layer_select(self, layer):
@@ -327,13 +328,13 @@ class CircleCraters(object):
         """ Run method that exports data to a file"""
         try:
             self.export_dlg.show()
-        except Exception as error:
+        except CircleCraterError as error:
             self.show_error(error.message)
 
     def export(self, crater_layer, area_layer, filename):
         try:
             self.write_diam_file(crater_layer, area_layer, filename)
-        except Exception as error:
+        except CircleCraterError as error:
             self.show_error(error.message)
 
     def create_diam_header(self, total_area):

@@ -26,6 +26,8 @@ import os
 from PyQt4 import QtGui, QtCore, uic
 from qgis.core import QgsMapLayer, QgsMapLayerRegistry
 
+from .errors import CircleCraterError
+
 
 ExportDialogBase, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'export_dialog_base.ui'))
@@ -57,7 +59,7 @@ class ExportDialog(QtGui.QDialog, ExportDialogBase):
     def show(self):
         choices = self.get_choices()
         if not choices:
-            raise Exception(
+            raise CircleCraterError(
                 'No choice of layers available. '
                 'Please create polygon type vector layers.'
             )

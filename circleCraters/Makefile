@@ -41,7 +41,8 @@ SOURCES = \
 	circle_craters.py \
 	export_dialog.py \
 	choose_layers_dialog.py \
-	shapes.py
+	shapes.py \
+	errors.py
 
 PLUGINNAME = CircleCraters
 
