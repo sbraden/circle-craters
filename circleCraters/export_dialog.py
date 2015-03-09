@@ -43,7 +43,11 @@ class ExportDialog(QtGui.QDialog, ExportDialogBase):
         # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
-        self.accepted = self.button_box.accepted
+        self.accepted.connect(self.on_accept)
+        self.filename_choose_button.clicked.connect(self.choose_file)
+
+    def choose_file(self):
+        self.filename_input.setText(QtGui.QFileDialog.getSaveFileName())
 
     def get_choices(self):
         # Fetch all loaded layers
@@ -58,33 +62,27 @@ class ExportDialog(QtGui.QDialog, ExportDialogBase):
                 'Please create polygon type vector layers.'
             )
 
-        self.craterLayer.clear()
-        self.areaLayer.clear()
+        self.crater_layer_select.clear()
+        self.area_layer_select.clear()
 
         for layer in choices:
             # Add these layers to the combobox (dropdown menu)
-            self.craterLayer.addItem(layer.name(), layer)
-            self.areaLayer.addItem(layer.name(), layer)
+            self.crater_layer_select.addItem(layer.name(), layer)
+            self.area_layer_select.addItem(layer.name(), layer)
 
         super(ExportDialog, self).show()
 
     def _get_layer(self, selector):
-        index = selector.currentIndex()
-        if index == -1:
-            return None
-        return selector.itemData(index)
+        return selector.itemData(selector.currentIndex())
 
     def get_crater_layer(self):
-        return self._get_layer(self.craterLayer)
+        return self._get_layer(self.crater_layer_select)
 
     def get_area_layer(self):
-        return self._get_layer(self.areaLayer)
+        return self._get_layer(self.area_layer_select)
 
-    def get_output_filename(self):
-        filename = self.editFilename.text()
-        if not filename.endswith('.diam'):
-            filename += '.diam'
-        return os.path.join(self.editDirectory.text(), filename)
+    def get_filename(self):
+        return self.filename_input.text()
 
     def on_accept(self):
         self.selected.emit(

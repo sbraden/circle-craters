@@ -100,7 +100,7 @@ class CircleCraters(object):
 
         # Create the dialog (after translation) and keep reference
         self.export_dlg = ExportDialog()
-        self.export_dlg.accepted.connect(self.export)
+        self.export_dlg.selected.connect(self.export)
 
         self.choose_dlg = ChooseLayersDialog()
         self.choose_dlg.selected.connect(self.on_layer_select)
