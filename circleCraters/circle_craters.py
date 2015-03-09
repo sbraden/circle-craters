@@ -349,7 +349,7 @@ class CircleCraters(object):
         print 'Area in meters squared: ', total_area
 
         header = self.create_diam_header(total_area)
-        nested_list = self.format_diam_data()
+        nested_list = self.format_diam_data(crater_layer, area_layer)
 
         # tab delimited datafile
         with open(filename, 'w') as fp:

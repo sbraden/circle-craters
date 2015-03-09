@@ -32,7 +32,7 @@ ExportDialogBase, _ = uic.loadUiType(os.path.join(
 
 
 class ExportDialog(QtGui.QDialog, ExportDialogBase):
-    selected = QtCore.pyqtSignal(object, object)
+    selected = QtCore.pyqtSignal(object, object, str)
 
     def __init__(self, parent=None):
         """Constructor."""
@@ -88,5 +88,5 @@ class ExportDialog(QtGui.QDialog, ExportDialogBase):
         self.selected.emit(
             self.get_crater_layer(),
             self.get_area_layer(),
-            self.get_output_filename(),
+            self.get_filename(),
         )
