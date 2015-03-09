@@ -289,10 +289,9 @@ class CircleCraters(object):
         self.layer = None
 
     def is_valid_layer(self, layer):
-        return all([
-            layer.type() == QgsMapLayer.VectorLayer,
-            layer.geometryType() == QGis.Polygon,
-        ])
+        if layer.type() != QgsMapLayer.VectorLayer:
+            return False
+        return layer.geometryType() == QGis.Polygon
 
     def get_layer_choices(self):
         layers = QgsMapLayerRegistry.instance().mapLayers().values()
