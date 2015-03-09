@@ -56,7 +56,7 @@
         <bool>true</bool>
        </property>
        <property name="text">
-        <string>Choose</string>
+        <string>Browse</string>
        </property>
       </widget>
      </item>

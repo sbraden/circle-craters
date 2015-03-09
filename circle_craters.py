@@ -37,10 +37,13 @@ from PyQt4.QtGui import (
 )
 
 from qgis.core import (
+    QGis,
     QgsDistanceArea,
     QgsFeature,
     QgsField,
     QgsGeometry,
+    QgsMapLayer,
+    QgsMapLayerRegistry,
     QgsPoint,
 )
 
@@ -50,12 +53,14 @@ from qgis.gui import (
 )
 
 # Initialize Qt resources from file resources.py
-import resources_rc  # noqa
+from . import resources_rc  # noqa
 
-from export_dialog import ExportDialog
-from choose_layers_dialog import ChooseLayersDialog
+from .errors import CircleCraterError
+from .shapes import Point, Circle
 
-from shapes import Point, Circle
+from .export_dialog import ExportDialog
+from .choose_layers_dialog import ChooseLayersDialog
+
 
 # TODO: Intersect on crater centers instead of crater polygons
 # TODO: total area must be in km^2 for the .diam file
@@ -283,13 +288,23 @@ class CircleCraters(object):
         self.circle_action.setEnabled(False)
         self.layer = None
 
+    def is_valid_layer(self, layer):
+        return all([
+            layer.type() == QgsMapLayer.VectorLayer,
+            layer.geometryType() == QGis.Polygon,
+        ])
+
+    def get_layer_choices(self):
+        layers = QgsMapLayerRegistry.instance().mapLayers().values()
+        return [layer for layer in layers if self.is_valid_layer(layer)]
+
     def show_layer_select(self):
         """ Run method that lets users choose layer for crater shapefile.
         Sets self.layer
         """
         try:
-            self.choose_dlg.show()
-        except Exception as error:
+            self.choose_dlg.show(self.get_layer_choices())
+        except CircleCraterError as error:
             self.show_error(error.message)
 
     def on_layer_select(self, layer):
@@ -326,14 +341,14 @@ class CircleCraters(object):
     def show_export_dialog(self):
         """ Run method that exports data to a file"""
         try:
-            self.export_dlg.show()
-        except Exception as error:
+            self.export_dlg.show(self.get_layer_choices())
+        except CircleCraterError as error:
             self.show_error(error.message)
 
     def export(self, crater_layer, area_layer, filename):
         try:
             self.write_diam_file(crater_layer, area_layer, filename)
-        except Exception as error:
+        except CircleCraterError as error:
             self.show_error(error.message)
 
     def create_diam_header(self, total_area):

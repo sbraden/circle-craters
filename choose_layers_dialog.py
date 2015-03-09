@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 /***************************************************************************
- ExportDialog
+ ChooseLayersDialog
                                  A QGIS plugin
  A crater counting tool for planetary science
                              -------------------
@@ -24,19 +24,20 @@
 import os
 
 from PyQt4 import QtGui, QtCore, uic
-from qgis.core import QgsMapLayer, QgsMapLayerRegistry
+
+from .errors import CircleCraterError
 
 
-ExportDialogBase, _ = uic.loadUiType(os.path.join(
-    os.path.dirname(__file__), 'export_dialog_base.ui'))
+ChooseLayersDialogBase, _ = uic.loadUiType(os.path.join(
+    os.path.dirname(__file__), 'choose_layers_dialog_base.ui'))
 
 
-class ExportDialog(QtGui.QDialog, ExportDialogBase):
-    selected = QtCore.pyqtSignal(object, object, str)
+class ChooseLayersDialog(QtGui.QDialog, ChooseLayersDialogBase):
+    selected = QtCore.pyqtSignal(object)
 
     def __init__(self, parent=None):
         """Constructor."""
-        super(ExportDialog, self).__init__(parent)
+        super(ChooseLayersDialog, self).__init__(parent)
         # Set up the user interface from Designer.
         # After setupUI you can access any designer object by doing
         # self.<objectname>, and you can use autoconnect slots - see
@@ -44,49 +45,24 @@ class ExportDialog(QtGui.QDialog, ExportDialogBase):
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
         self.accepted.connect(self.on_accept)
-        self.filename_choose_button.clicked.connect(self.choose_file)
 
-    def choose_file(self):
-        self.filename_input.setText(QtGui.QFileDialog.getSaveFileName())
-
-    def get_choices(self):
-        # Fetch all loaded layers
-        layers = QgsMapLayerRegistry.instance().mapLayers().values()
-        return [l for l in layers if l.type() == QgsMapLayer.VectorLayer]
-
-    def show(self):
-        choices = self.get_choices()
+    def show(self, choices):
         if not choices:
-            raise Exception(
+            raise CircleCraterError(
                 'No choice of layers available. '
                 'Please create polygon type vector layers.'
             )
 
-        self.crater_layer_select.clear()
-        self.area_layer_select.clear()
+        self.layer_select.clear()
 
         for layer in choices:
             # Add these layers to the combobox (dropdown menu)
-            self.crater_layer_select.addItem(layer.name(), layer)
-            self.area_layer_select.addItem(layer.name(), layer)
+            self.layer_select.addItem(layer.name(), layer)
 
-        super(ExportDialog, self).show()
+        super(ChooseLayersDialog, self).show()
 
-    def _get_layer(self, selector):
-        return selector.itemData(selector.currentIndex())
-
-    def get_crater_layer(self):
-        return self._get_layer(self.crater_layer_select)
-
-    def get_area_layer(self):
-        return self._get_layer(self.area_layer_select)
-
-    def get_filename(self):
-        return self.filename_input.text()
+    def get_layer(self):
+        return self.layer_select.itemData(self.layer_select.currentIndex())
 
     def on_accept(self):
-        self.selected.emit(
-            self.get_crater_layer(),
-            self.get_area_layer(),
-            self.get_filename(),
-        )
+        self.selected.emit(self.get_layer())
