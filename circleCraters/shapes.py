@@ -146,6 +146,20 @@ class Circle(object):
     def radius(self):
         return Line(self.center, self.vertices[0]).length
 
+    @cached_property
+    def diameter(self):
+        return 2 * self.radius
+
+    def point_at(self, theta):
+        return Point(
+            self.radius * math.cos(theta) + self.center.x,
+            self.radius * math.sin(theta) + self.center.y
+        )
+
+    def to_polygon(self, segments=64):
+        thetas = [(2 * math.pi) / segments * i for i in xrange(segments)]
+        return [self.point_at(theta) for theta in thetas]
+
     def __repr__(self):
         return 'Circle(%s, %s, %s)' % self.vertices
 
