@@ -220,28 +220,28 @@ class CircleCraters(object):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
         self.add_action(
-            ':/plugins/CircleCraters/start.png',
-            text=self.tr(u'Select Layers for Crater Counting'),
+            ':/plugins/CircleCraters/icons/ic_layers_48px.svg',
+            text=self.tr(u'Select Crater Counting Layer'),
             callback=self.show_layer_select,
             parent=self.iface.mainWindow(),
         )
 
         self.add_action(
-            ':/plugins/CircleCraters/stop.png',
+            ':/plugins/CircleCraters/icons/ic_layers_clear_48px.svg',
             text=self.tr(u'Stop Crater Counting'),
             callback=self.stop_tool,
             parent=self.iface.mainWindow(),
         )
 
         self.add_action(
-            ':/plugins/CircleCraters/3points.png',
+            ':/plugins/CircleCraters/icons/ic_add_circle_outline_48px.svg',
             text=self.tr(u'Circle Craters'),
             callback=self.set_tool,
             parent=self.iface.mainWindow(),
         )
 
         self.add_action(
-            ':/plugins/CircleCraters/export.png',
+            ':/plugins/CircleCraters/icons/ic_archive_48px.svg',
             text=self.tr(u'Export Data'),
             callback=self.show_export_dialog,
             parent=self.iface.mainWindow(),

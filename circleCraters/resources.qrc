@@ -1,9 +1,10 @@
 <RCC>
     <qresource prefix="/plugins/CircleCraters" >
+        <!-- icons from https://github.com/google/material-design-icons -->
         <file>icon.png</file>
-        <file>export.png</file>
-        <file>3points.png</file>
-        <file>start.png</file>
-        <file>stop.png</file>
+        <file>icons/ic_layers_48px.svg</file>
+        <file>icons/ic_layers_clear_48px.svg</file>
+        <file>icons/ic_add_circle_outline_48px.svg</file>
+        <file>icons/ic_archive_48px.svg</file>
     </qresource>
 </RCC>
