@@ -24,7 +24,6 @@
 import os
 
 from PyQt4 import QtGui, QtCore, uic
-from qgis.core import QgsMapLayer, QgsMapLayerRegistry
 
 from .errors import CircleCraterError
 
@@ -51,13 +50,7 @@ class ExportDialog(QtGui.QDialog, ExportDialogBase):
     def choose_file(self):
         self.filename_input.setText(QtGui.QFileDialog.getSaveFileName())
 
-    def get_choices(self):
-        # Fetch all loaded layers
-        layers = QgsMapLayerRegistry.instance().mapLayers().values()
-        return [l for l in layers if l.type() == QgsMapLayer.VectorLayer]
-
-    def show(self):
-        choices = self.get_choices()
+    def show(self, choices):
         if not choices:
             raise CircleCraterError(
                 'No choice of layers available. '

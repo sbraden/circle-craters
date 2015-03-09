@@ -37,10 +37,13 @@ from PyQt4.QtGui import (
 )
 
 from qgis.core import (
+    QGis,
     QgsDistanceArea,
     QgsFeature,
     QgsField,
     QgsGeometry,
+    QgsMapLayer,
+    QgsMapLayerRegistry,
     QgsPoint,
 )
 
@@ -284,12 +287,22 @@ class CircleCraters(object):
         self.circle_action.setEnabled(False)
         self.layer = None
 
+    def is_valid_layer(self, layer):
+        return all([
+            layer.type() == QgsMapLayer.VectorLayer,
+            layer.geometryType() == QGis.Polygon,
+        ])
+
+    def get_layer_choices(self):
+        layers = QgsMapLayerRegistry.instance().mapLayers().values()
+        return [layer for layer in layers if self.is_valid_layer(layer)]
+
     def show_layer_select(self):
         """ Run method that lets users choose layer for crater shapefile.
         Sets self.layer
         """
         try:
-            self.choose_dlg.show()
+            self.choose_dlg.show(self.get_layer_choices())
         except CircleCraterError as error:
             self.show_error(error.message)
 
@@ -327,7 +340,7 @@ class CircleCraters(object):
     def show_export_dialog(self):
         """ Run method that exports data to a file"""
         try:
-            self.export_dlg.show()
+            self.export_dlg.show(self.get_layer_choices())
         except CircleCraterError as error:
             self.show_error(error.message)
 
