@@ -57,7 +57,7 @@ from choose_layers_dialog import ChooseLayersDialog
 
 from shapes import Point, Circle
 
-# TODO: Handle intersection of crater centers and area layers
+# TODO: Intersect on crater centers instead of crater polygons
 # TODO: total area must be in km^2 for the .diam file
 
 # TODO: Test conversion between CRS
@@ -359,6 +359,11 @@ class CircleCraters(object):
     def get_distance_area(self, layer):
         # Call up the CRS
         crs = layer.dataProvider().crs()
+        print crs
+        print crs.description()
+        print crs.mapUnits()
+        print crs.isValid()
+        print crs.toProj4()
         distance_area = QgsDistanceArea()
         distance_area.setSourceCrs(crs)
         distance_area.setEllipsoid(crs.ellipsoidAcronym())
