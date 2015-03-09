@@ -21,19 +21,38 @@
  ***************************************************************************/
 """
 import os.path
-import math
 import datetime
 
-from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, QVariant
-from PyQt4.QtGui import QAction, QIcon, QColor
+from PyQt4.QtCore import (
+    QCoreApplication,
+    QSettings,
+    QTranslator,
+    QVariant,
+    qVersion,
+)
 
-from qgis.core import QgsPoint, QgsGeometry, QgsFeature, QgsMapLayerRegistry, QgsVectorLayer, QgsMapLayer, QgsErrorMessage, QgsField, QgsDistanceArea
-from qgis.gui import QgsMapToolEmitPoint, QgsRubberBand
+from PyQt4.QtGui import (
+    QAction,
+    QIcon,
+)
+
+from qgis.core import (
+    QgsDistanceArea,
+    QgsFeature,
+    QgsField,
+    QgsGeometry,
+    QgsPoint,
+)
+
+from qgis.gui import (
+    QgsMapToolEmitPoint,
+    QgsMessageBar,
+)
 
 # Initialize Qt resources from file resources.py
 import resources_rc  # noqa
 
-from circle_craters_dialog import CircleCratersDialog
+from export_dialog import ExportDialog
 from choose_layers_dialog import ChooseLayersDialog
 
 from shapes import Point, Circle
@@ -80,9 +99,11 @@ class CircleCraters(object):
                 QCoreApplication.installTranslator(self.translator)
 
         # Create the dialog (after translation) and keep reference
-        # TODO: rename to export_dlg
-        self.dlg = CircleCratersDialog()
+        self.export_dlg = ExportDialog()
+        self.export_dlg.selected.connect(self.export)
+
         self.choose_dlg = ChooseLayersDialog()
+        self.choose_dlg.selected.connect(self.on_layer_select)
 
         # Declare instance attributes
         self.actions = []
@@ -95,11 +116,6 @@ class CircleCraters(object):
         self.tool.canvasClicked.connect(self.handle_click)
         self.tool.deactivated.connect(self.reset_clicks)
         self.clicks = []
-
-        self.rb = QgsRubberBand(self.canvas, True)
-        self.rb.setBorderColor(QColor(255, 0, 0))
-        self.rb.setFillColor(QColor(0, 0, 0, 0))
-        self.rb.setWidth(1)
 
         self.layer = None
 
@@ -117,6 +133,14 @@ class CircleCraters(object):
         """
         # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
         return QCoreApplication.translate('CircleCraters', message)
+
+    def show_error(self, message, title='Error', **kwargs):
+        self.iface.messageBar().pushMessage(
+            title, message, level=QgsMessageBar.CRITICAL, **kwargs)
+
+    def show_info(self, message, **kwargs):
+        self.iface.messageBar().pushMessage(
+            message, level=QgsMessageBar.INFO, **kwargs)
 
     def add_action(
         self,
@@ -198,7 +222,7 @@ class CircleCraters(object):
         self.add_action(
             ':/plugins/CircleCraters/start.png',
             text=self.tr(u'Select Layers for Crater Counting'),
-            callback=self.prep_tool,
+            callback=self.show_layer_select,
             parent=self.iface.mainWindow(),
         )
 
@@ -219,7 +243,7 @@ class CircleCraters(object):
         self.add_action(
             ':/plugins/CircleCraters/export.png',
             text=self.tr(u'Export Data'),
-            callback=self.export_tool,
+            callback=self.show_export_dialog,
             parent=self.iface.mainWindow(),
         )
 
@@ -240,74 +264,51 @@ class CircleCraters(object):
         if len(self.clicks) != 3:
             return
 
-        circle = Circle(self.clicks[0], self.clicks[1], self.clicks[2])
-        self.draw_circle(circle.center.x, circle.center.y, circle.radius)
-
+        self.draw_circle(Circle(*self.clicks))
         self.reset_clicks()
 
     def set_tool(self):
         """Run method that performs all the real work"""
-        if self.layer:
-            self.canvas.setMapTool(self.tool)
-        else:
-            msg = 'No crater counting layer selected. Please choose a layer.'
-            self.iface.messageBar().pushMessage('User Error:', msg)
+        if not self.layer:
+            error = 'No crater counting layer selected. Please choose a layer.'
+            self.show_error(error)
+        self.canvas.setMapTool(self.tool)
 
     def stop_tool(self):
         """Run method that deactivates the crater counting tool"""
         self.canvas.unsetMapTool(self.tool)
         self.layer = None
 
-    def prep_tool(self):
+    def show_layer_select(self):
         """ Run method that lets users choose layer for crater shapefile.
         Sets self.layer
         """
-        self.choose_dlg.show()
-        # Fetch all loaded layers
-        layers = QgsMapLayerRegistry.instance().mapLayers().values()
-        for layer in layers:
-            if layer.type() == QgsMapLayer.VectorLayer:
-                # Add these layers to the combobox (dropdown menu)
-                self.choose_dlg.craterLayer.addItem(layer.name(), layer)
-                self.choose_dlg.areaLayer.addItem(layer.name(), layer)
+        try:
+            self.choose_dlg.show()
+        except Exception as error:
+            self.show_error(error.message)
 
-        # Run the dialog event loop
-        result = self.choose_dlg.exec_()
+    def on_layer_select(self, layer):
+        self.layer = layer
+        self.set_field_attributes()
 
-        # See if OK was pressed
-        if result == 1:
+        msg = 'The layer "{!s}" is set as the crater counting layer'
+        self.show_info(msg.format(layer.name()))
 
-            if self.choose_dlg.craterLayer.currentIndex() == -1:
-                msg = 'No choice of layers available. Please create polygon type vector layers.'
-                self.iface.messageBar().pushMessage('User Error', msg)
-                return
-
-            crater_index = self.choose_dlg.craterLayer.currentIndex()
-            crater_layer = self.choose_dlg.craterLayer.itemData(crater_index)
-            area_index = self.choose_dlg.areaLayer.currentIndex()
-            area_layer = self.choose_dlg.areaLayer.itemData(area_index)
-            print 'Area Layer name:', area_layer.name()
-
-            self.layer = crater_layer
-            self.set_field_attributes()
-
-            msg = 'The layer: "{}" is set as the crater counting layer'.format(crater_layer.name())
-            self.iface.messageBar().pushMessage('Info', msg)
-
-            self.set_tool()
+        self.set_tool()
 
     def set_field_attributes(self):
         if self.layer.fieldNameIndex('diameter') == -1:
             field_attribute = [QgsField('diameter', QVariant.Double)]
-            result = self.layer.dataProvider().addAttributes(field_attribute)
+            self.layer.dataProvider().addAttributes(field_attribute)
 
         if self.layer.fieldNameIndex('center_lat') == -1:
             field_attribute = [QgsField('center_lat', QVariant.Double)]
-            result = self.layer.dataProvider().addAttributes(field_attribute)
+            self.layer.dataProvider().addAttributes(field_attribute)
 
         if self.layer.fieldNameIndex('center_lon') == -1:
             field_attribute = [QgsField('center_lon', QVariant.Double)]
-            result = self.layer.dataProvider().addAttributes(field_attribute)
+            self.layer.dataProvider().addAttributes(field_attribute)
 
         # TODO: decide what to do with useless useless 'id' field.
         # self.layer.dataProvider().deleteAttributes([0])
@@ -316,81 +317,69 @@ class CircleCraters(object):
 
         self.layer.updateFields()
 
-    def export_tool(self):
+    def show_export_dialog(self):
         """ Run method that exports data to a file"""
-        self.dlg.show()
-        # Fetch all loaded layers
-        layers = QgsMapLayerRegistry.instance().mapLayers().values()
-        for layer in layers:
-            if layer.type() == QgsMapLayer.VectorLayer:
-                # Add these layers to the combobox (dropdown menu)
-                self.dlg.craterLayer.addItem(layer.name(), layer)
-                self.dlg.areaLayer.addItem(layer.name(), layer)
+        try:
+            self.export_dlg.show()
+        except Exception as error:
+            self.show_error(error.message)
 
-        # Run the dialog event loop
-        result = self.dlg.exec_()
-        # See if OK was pressed
-        if result == 1:
-            crater_index = self.dlg.craterLayer.currentIndex()
-            self.crater_export_layer = self.dlg.craterLayer.itemData(crater_index)
-
-            area_index = self.dlg.areaLayer.currentIndex()
-            self.area_export_layer = self.dlg.areaLayer.itemData(area_index)
-
-            self.write_diam_file(self.dlg.editDirectory.text(), self.dlg.editFilename.text())
+    def export(self, crater_layer, area_layer, filename):
+        try:
+            self.write_diam_file(crater_layer, area_layer, filename)
+        except Exception as error:
+            self.show_error(error.message)
 
     def create_diam_header(self, total_area):
         current_datetime = str(datetime.datetime.now())
-        header_lines = [
-            '# Diam file for Craterstats\n',
-            '# Date of measurement export = ' + current_datetime + '\n',
-            '#\n',
-            'Area <km^2> = ' + str(total_area) + '\n',
-            '#\n',
-            '#diameter, fraction, lon, lat\n',
+        header = [
+            '# Diam file for Craterstats',
+            '# Date of measurement export = {}'.format(current_datetime),
+            '#',
+            'Area <km^2> = {}'.format(total_area),
+            '#',
+            '#diameter, fraction, lon, lat',
+            '',
         ]
-        return header_lines
+        return '\n'.join(header)
 
-    def write_diam_file(self, directory, filename):
+    def write_diam_file(self, crater_layer, area_layer, filename):
         """Method writes crater data to a special formatted file."""
-        if os.path.exists(directory):
+        total_area = self.compute_area(area_layer)
+        print 'Area in meters squared: ', total_area
 
-            total_area = self.compute_area()
-            print 'Area in meters squared: ', total_area
-            header_lines = self.create_diam_header(total_area)
-            nested_list = self.format_diam_data()
+        header = self.create_diam_header(total_area)
+        nested_list = self.format_diam_data()
 
-            # tab delimited datafile
-            with open(os.path.join(directory, filename + '.diam'), 'w') as f:
-                for line in header_lines:
-                    f.write(line)
-                f.writelines('\t'.join(i) + '\n' for i in nested_list)
-        else:
-            msg = 'The directory "{}" does not exist.'.format(directory)
-            self.iface.messageBar().pushMessage('User Error', msg)
+        # tab delimited datafile
+        with open(filename, 'w') as fp:
+            fp.write(header)
+            fp.writelines('\t'.join(i) + '\n' for i in nested_list)
+
+    def get_distance_area(self, layer):
+        # Call up the CRS
+        crs = layer.dataProvider().crs()
+        distance_area = QgsDistanceArea()
+        distance_area.setSourceCrs(crs)
+        distance_area.setEllipsoid(crs.ellipsoidAcronym())
+        distance_area.setEllipsoidalMode(crs.geographicFlag())
+        return distance_area
 
     def convert_meters_to_km(self, meters):
         return meters * 0.001
 
-    def area(self, d, feature):
-        return d.measure(feature.geometry())
+    def measure(self, layer, geometry):
+        return self.get_distance_area(layer).measure(geometry)
 
-    def compute_area(self):
+    def compute_area(self, layer):
         """Returns values are in meters resp. square meters
         http://qgis.org/api/2.6/classQgsDistanceArea.html
-        use measure() takes QgsGeometry as a parameter and calculates distance or area
+        use measure() takes QgsGeometry as a parameter and calculates distance
+        or area
         """
-        # Call up the CRS
-        provider = self.area_export_layer.dataProvider()
-        crs = provider.crs()
-        d = QgsDistanceArea()
-        d.setSourceCrs(crs)
-        d.setEllipsoid(crs.ellipsoidAcronym())
-        d.setEllipsoidalMode(crs.geographicFlag())
-
-        features = self.area_export_layer.getFeatures()
-        areas = [self.area(d, f) for f in features]
-        return sum(areas)
+        distance_area = self.get_distance_area(layer)
+        features = layer.getFeatures()
+        return sum([distance_area.measure(f.geometry()) for f in features])
 
     def get_fields(self, feature, diameter, lon, lat):
         """Retrieves fields from the attribute table in the order required
@@ -409,67 +398,51 @@ class CircleCraters(object):
         ]
         return field_list
 
-    def convert_diam_to_meters(self, feature):
-        # Call up the CRS
-        provider = self.layer.dataProvider()
-        crs = provider.crs()
-        d = QgsDistanceArea()
-        d.setSourceCrs(crs)
-        d.setEllipsoid(crs.ellipsoidAcronym())
-        d.setEllipsoidalMode(crs.geographicFlag())
+    def pixels_to_meters(self, layer, pixels):
+        line = [QgsPoint(0.0, 0.0), QgsPoint(0.0, pixels)]
+        geometry = QgsGeometry.fromPolyline(line)
+        return self.measure(layer, geometry)
 
-        return d.measure(feature.geometry())
+    def intersects(self, crater, areas):
+        geometry = crater.geometry()
+        return any(geometry.intersects(area.geometry()) for area in areas)
 
-    def intersects(self, areas, crater):
-        return any(a.geometry().intersects(crater.geometry()) for a in areas)
-
-    def format_diam_data(self):
+    def format_diam_data(self, crater_layer, area_layer):
         """Formats crater diameter data for export as .diam file
         Checks to see if craters intersect with area polygons in area layer
         """
-        diameter = self.crater_export_layer.fieldNameIndex('diameter')
-        lat = self.crater_export_layer.fieldNameIndex('center_lat')
-        lon = self.crater_export_layer.fieldNameIndex('center_lon')
+        diameter = crater_layer.fieldNameIndex('diameter')
+        lat = crater_layer.fieldNameIndex('center_lat')
+        lon = crater_layer.fieldNameIndex('center_lon')
 
-        craters = list(self.crater_export_layer.getFeatures())
-        areas = list(self.area_export_layer.getFeatures())
+        craters = list(crater_layer.getFeatures())
+        areas = list(area_layer.getFeatures())
 
-        craters = [c for c in craters if self.intersects(areas, c)]
+        craters = [c for c in craters if self.intersects(c, areas)]
         return [self.get_fields(c, diameter, lon, lat) for c in craters]
 
-    def generate_circle(self, x, y, r):
-        segments = 64
-        thetas = [(2 * math.pi) / segments * i for i in xrange(segments)]
-        points = [Point(r * math.cos(t), r * math.sin(t)) for t in thetas]
-        polygon = [QgsPoint(p.x + x, p.y + y) for p in points]
-        return QgsGeometry.fromPolygon([polygon])
-
-    def draw_circle(self, x, y, r):
-        geometry = self.generate_circle(x, y, r)
+    def draw_circle(self, circle):
+        polygon = [QgsPoint(*point) for point in circle.to_polygon()]
+        geometry = QgsGeometry.fromPolygon([polygon])
 
         feature = QgsFeature()
         feature.setGeometry(geometry)
 
         # Create a line geometry to represent radius
-        radius_line = [QgsPoint(0.0, 0.0), QgsPoint(0.0, r)]
-        print radius_line
-        radius_geometry = QgsGeometry.fromPolyline(radius_line)
-        line = QgsFeature()
-        line.setGeometry(radius_geometry)
+        diameter = self.pixels_to_meters(self.layer, circle.diameter)
 
-        radius_in_meters = self.convert_diam_to_meters(line)
-        print 'Radius in meters:', radius_in_meters
-
-        # feature.id() is NULL right now
-        feature.setAttributes([feature.id(), radius_in_meters * 2, x, y])
+        # circle_feature.id() is NULL right now
+        feature.setAttributes([
+            feature.id(),
+            diameter,
+            circle.center.x,
+            circle.center.y,
+        ])
 
         self.layer.startEditing()
-
-        (result, feat_list) = self.layer.dataProvider().addFeatures([feature])
-        self.rb.setToGeometry(geometry, None)
-
-        # commit to stop editing the layer
+        self.layer.dataProvider().addFeatures([feature])
         self.layer.commitChanges()
+
         # update layer's extent when new features have been added
         # because change of extent in provider is not propagated to the layer
         self.layer.updateExtents()

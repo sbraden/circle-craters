@@ -39,7 +39,7 @@ LOCALES =
 SOURCES = \
 	__init__.py \
 	circle_craters.py \
-	circle_craters_dialog.py \
+	export_dialog.py \
 	choose_layers_dialog.py \
 	shapes.py
 
@@ -47,14 +47,14 @@ PLUGINNAME = CircleCraters
 
 PY_FILES = \
 	circle_craters.py \
-	circle_craters_dialog.py \
+	export_dialog.py \
 	choose_layers_dialog.py \
 	shapes.py \
 	__init__.py
 
 UI_FILES = \
-	circle_craters_dialog_base.ui \
-	choose_layers_dialog.ui
+	export_dialog_base.ui \
+	choose_layers_dialog_base.ui
 
 EXTRAS = icon.png export.png start.png stop.png metadata.txt
 
