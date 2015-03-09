@@ -56,7 +56,7 @@ UI_FILES = \
 	export_dialog_base.ui \
 	choose_layers_dialog_base.ui
 
-EXTRAS = icon.png export.png start.png stop.png metadata.txt
+EXTRAS = icon.png metadata.txt
 
 COMPILED_RESOURCE_FILES = resources_rc.py
 

@@ -219,29 +219,31 @@ class CircleCraters(object):
     def initGui(self):  # noqa
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
-        self.add_action(
-            ':/plugins/CircleCraters/start.png',
-            text=self.tr(u'Select Layers for Crater Counting'),
+        self.start_action = self.add_action(
+            ':/plugins/CircleCraters/icons/ic_layers_48px.svg',
+            text=self.tr(u'Select Crater Counting Layer'),
             callback=self.show_layer_select,
             parent=self.iface.mainWindow(),
         )
 
-        self.add_action(
-            ':/plugins/CircleCraters/stop.png',
+        self.stop_action = self.add_action(
+            ':/plugins/CircleCraters/icons/ic_layers_clear_48px.svg',
             text=self.tr(u'Stop Crater Counting'),
+            enabled_flag=False,
             callback=self.stop_tool,
             parent=self.iface.mainWindow(),
         )
 
-        self.add_action(
-            ':/plugins/CircleCraters/3points.png',
+        self.circle_action = self.add_action(
+            ':/plugins/CircleCraters/icons/ic_add_circle_outline_48px.svg',
             text=self.tr(u'Circle Craters'),
+            enabled_flag=False,
             callback=self.set_tool,
             parent=self.iface.mainWindow(),
         )
 
-        self.add_action(
-            ':/plugins/CircleCraters/export.png',
+        self.export_action = self.add_action(
+            ':/plugins/CircleCraters/icons/ic_archive_48px.svg',
             text=self.tr(u'Export Data'),
             callback=self.show_export_dialog,
             parent=self.iface.mainWindow(),
@@ -277,6 +279,8 @@ class CircleCraters(object):
     def stop_tool(self):
         """Run method that deactivates the crater counting tool"""
         self.canvas.unsetMapTool(self.tool)
+        self.stop_action.setEnabled(False)
+        self.circle_action.setEnabled(False)
         self.layer = None
 
     def show_layer_select(self):
@@ -295,6 +299,8 @@ class CircleCraters(object):
         msg = 'The layer "{!s}" is set as the crater counting layer'
         self.show_info(msg.format(layer.name()))
 
+        self.stop_action.setEnabled(True)
+        self.circle_action.setEnabled(True)
         self.set_tool()
 
     def set_field_attributes(self):
