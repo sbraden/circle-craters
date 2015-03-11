@@ -44,6 +44,8 @@ from qgis.core import (
     QgsGeometry,
     QgsMapLayer,
     QgsMapLayerRegistry,
+    QgsCoordinateTransform,
+    QgsCoordinateReferenceSystem,
     QgsPoint,
 )
 
@@ -61,11 +63,11 @@ from .shapes import Point, Circle
 from .export_dialog import ExportDialog
 from .choose_layers_dialog import ChooseLayersDialog
 
-
-# BUGFIX: crater diameters are no longer in meters after changing crs() call in get_distance_area
-# TODO: total area must be in km^2 for the .diam file
-# TODO: Test conversion between CRS
-# TODO: test area and distance measurements for accuracy
+# TODO: Fix intersection issue
+# TODO: Have user set the destination CRS (planetary body dependent)
+# TODO: put units on attribute table headings
+# TODO: put polygon area in attribute table for that layer
+# TODO: write formal tests for area and distance measurement accuracy
 
 
 class CircleCraters(object):
@@ -315,17 +317,19 @@ class CircleCraters(object):
         self.set_tool()
 
     def set_field_attributes(self):
+        self.layer.startEditing()
+
         if self.layer.fieldNameIndex('diameter') == -1:
-            field_attribute = [QgsField('diameter', QVariant.Double)]
-            self.layer.dataProvider().addAttributes(field_attribute)
+            field_attribute = QgsField('diameter', QVariant.Double)
+            self.layer.dataProvider().addAttributes([field_attribute])
 
         if self.layer.fieldNameIndex('center_lat') == -1:
-            field_attribute = [QgsField('center_lat', QVariant.Double)]
-            self.layer.dataProvider().addAttributes(field_attribute)
+            field_attribute = QgsField('center_lat', QVariant.Double)
+            self.layer.dataProvider().addAttributes([field_attribute])
 
         if self.layer.fieldNameIndex('center_lon') == -1:
-            field_attribute = [QgsField('center_lon', QVariant.Double)]
-            self.layer.dataProvider().addAttributes(field_attribute)
+            field_attribute = QgsField('center_lon', QVariant.Double)
+            self.layer.dataProvider().addAttributes([field_attribute])
 
         # TODO: decide what to do with useless useless 'id' field.
         # self.layer.dataProvider().deleteAttributes([0])
@@ -333,6 +337,7 @@ class CircleCraters(object):
         # print self.layer.dataProvider().fields()
 
         self.layer.updateFields()
+        self.layer.commitChanges()
 
     def show_export_dialog(self):
         """ Run method that exports data to a file"""
@@ -363,9 +368,10 @@ class CircleCraters(object):
     def write_diam_file(self, crater_layer, area_layer, filename):
         """Method writes crater data to a special formatted file."""
         total_area = self.compute_area(area_layer)
-        print 'Area in meters squared: ', total_area
+        km_squared = self.convert_square_meters_to_km(total_area)
+        print 'Area in km squared: ', km_squared
 
-        header = self.create_diam_header(total_area)
+        header = self.create_diam_header(km_squared)
         nested_list = self.format_diam_data(crater_layer, area_layer)
 
         # tab delimited datafile
@@ -374,42 +380,50 @@ class CircleCraters(object):
             fp.writelines('\t'.join(i) + '\n' for i in nested_list)
 
     def get_distance_area(self, layer):
-        # Call up the CRS
-        crs = layer.crs()
-
-        print crs.description()
-        print crs.isValid()
-        print crs.toProj4()
-        print "Projection Acronym:", crs.projectionAcronym()
-        print "Ellipsoid Acronym:", crs.ellipsoidAcronym()
-        # print "Proj4 String:", crs.proj4String()
-        # check whether it's geographic or projected coordinate system
-        print "Is geographic:", crs.geographicFlag()
-        # check type of map units in this CRS (values defined in QGis::units enum)
-        # Meters = 0, Feet = 1, Degrees = 2, UnknownUnit = 3, DecimalDegrees = 2
-        print "Map units:", crs.mapUnits()
+        destination = self.get_destination_crs()
 
         distance_area = QgsDistanceArea()
-        distance_area.setSourceCrs(crs)
-        distance_area.setEllipsoid(crs.ellipsoidAcronym())
-        distance_area.setEllipsoidalMode(crs.geographicFlag())
+        distance_area.setSourceCrs(layer.crs())
+        print 'destination CRS ellipsoidAcronym:', destination.ellipsoidAcronym()
+        distance_area.setEllipsoid(destination.ellipsoidAcronym())
+        # sets whether coordinates must be projected to ellipsoid before measuring
+        distance_area.setEllipsoidalMode(True)
+
         return distance_area
 
     def convert_meters_to_km(self, meters):
         return meters * 0.001
 
+    def convert_square_meters_to_km(self, square_meters):
+        return square_meters * 1.0e-6
+
     def measure(self, layer, geometry):
         return self.get_distance_area(layer).measure(geometry)
 
+    def get_actual_area(self, feature, distance_area, xform):
+        # TODO: distance_area and xform should probably be class variables
+        points = feature.geometry().asPolygon()
+        print points[0]
+        transformed = [self.transform_point(xform, point) for point in points[0]]
+        new_polygon = QgsGeometry.fromPolygon([transformed])
+        actual_area = distance_area.measure(new_polygon)
+        print 'actual area in m^2:', actual_area
+        print 'area in km^2:', self.convert_square_meters_to_km(actual_area)
+        return actual_area
+
     def compute_area(self, layer):
         """Returns values are in meters resp. square meters
-        http://qgis.org/api/2.6/classQgsDistanceArea.html
+        http://qgis.org/api/2.8/classQgsDistanceArea.html
         use measure() takes QgsGeometry as a parameter and calculates distance
         or area
         """
+        destination = self.get_destination_crs()
+        source = layer.crs()
+        xform = self.crs_transform(source, destination)
         distance_area = self.get_distance_area(layer)
-        features = layer.getFeatures()
-        return sum([distance_area.measure(f.geometry()) for f in features])
+
+        features = list(layer.getFeatures())
+        return sum([self.get_actual_area(f, distance_area, xform) for f in features])
 
     def get_fields(self, feature, diameter, lon, lat):
         """Retrieves fields from the attribute table in the order required
@@ -428,11 +442,6 @@ class CircleCraters(object):
         ]
         return field_list
 
-    def pixels_to_meters(self, layer, pixels):
-        line = [QgsPoint(0.0, 0.0), QgsPoint(0.0, pixels)]
-        geometry = QgsGeometry.fromPolyline(line)
-        return self.measure(layer, geometry)
-
     def crater_center(self, crater, lat, lon):
         center_point = QgsPoint(
             crater.attributes()[lon],
@@ -441,6 +450,7 @@ class CircleCraters(object):
         return QgsGeometry.fromPoint(center_point)
 
     def intersects(self, crater, areas, lat, lon):
+        # This geometry is in units of degrees
         center_geometry = self.crater_center(crater, lat, lon)
         return any(center_geometry.intersects(a.geometry()) for a in areas)
 
@@ -453,10 +463,24 @@ class CircleCraters(object):
         lon = crater_layer.fieldNameIndex('center_lon')
 
         craters = list(crater_layer.getFeatures())
+        #TODO: these areas are in units of meters, while the centers of craters are in degrees!
         areas = list(area_layer.getFeatures())
 
         craters = [c for c in craters if self.intersects(c, areas, lat, lon)]
         return [self.get_fields(c, diameter, lon, lat) for c in craters]
+
+    def crs_transform(self, source, destination):
+        return QgsCoordinateTransform(source, destination)
+
+    def transform_point(self, xform, point):
+        return xform.transform(point)
+
+    def get_destination_crs(self):
+        # 'Moon 2000'
+        moon = '+proj=longlat +a=1737400 +b=1737400 +no_defs'
+        destination = QgsCoordinateReferenceSystem()
+        destination.createFromProj4(moon)
+        return destination
 
     def draw_circle(self, circle):
         polygon = [QgsPoint(*point) for point in circle.to_polygon()]
@@ -465,19 +489,43 @@ class CircleCraters(object):
         feature = QgsFeature()
         feature.setGeometry(geometry)
 
-        # Create a line geometry to represent radius
-        diameter = self.pixels_to_meters(self.layer, circle.diameter)
+        destination = self.get_destination_crs()
+        source = self.layer.crs()
+        xform = self.crs_transform(source, destination)
+
+        # This must be with respect to the center point of the crater
+        # Or else there is no projection information, duh!
+        line = [
+            QgsPoint(circle.center.x, circle.center.y),
+            QgsPoint(circle.center.x + circle.radius, circle.center.y),
+        ]
+        print 'point 1:', line[0]
+        print 'point 2:', line[1]
+
+        transformed = [
+            self.transform_point(xform, line[0]),
+            self.transform_point(xform, line[1]),
+        ]
+        new_line_geometry = QgsGeometry.fromPolyline(transformed)
+
+        distance_area = self.get_distance_area(self.layer)
+        actual_line_distance = distance_area.measure(new_line_geometry)
+        print 'actual diameter in meters:', actual_line_distance * 2
+
+        # Translate circle center to units of degrees
+        center_in_degrees = xform.transform(circle.center.x, circle.center.y)
 
         # circle_feature.id() is NULL right now
         feature.setAttributes([
             feature.id(),
-            diameter,
-            circle.center.x,
-            circle.center.y,
+            actual_line_distance * 2,
+            center_in_degrees[0],
+            center_in_degrees[1],
         ])
 
         self.layer.startEditing()
-        self.layer.dataProvider().addFeatures([feature])
+        # self.layer.dataProvider().addFeatures([feature])
+        self.layer.addFeature(feature, True)
         self.layer.commitChanges()
 
         # update layer's extent when new features have been added
