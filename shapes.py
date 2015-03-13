@@ -36,7 +36,7 @@ class Point(object):
         self.y = y
 
     @classmethod
-    def is_collinear(cls, points, error=1E-6):
+    def is_collinear(cls, points, error=1E-9):
         points = list(set(points))
         if len(points) == 0:
             return False
