@@ -15,9 +15,6 @@ Features include:
 * Three-click input defines crater rims as a circle
 * Projection independent
 
-Coming soon:
-* Documentation
-
 Details
 -----
 
@@ -51,14 +48,15 @@ Installation
 
     make: pyrcc4: Command not found.
 
-    If you see this message install the Python Qt4 developer tools by running:
+If you see this message install the Python Qt4 developer tools by running:
 
     $sudo apt-get install pyqt4-dev-tool.
 
+Another commmon error:
 
     make: sphinx-build: Command not found
 
-    If you see this message install the python sphinx library by running:
+If you see this message install the python sphinx library by running:
 
     $ sudo apt-get install python-sphinx
 
