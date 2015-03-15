@@ -65,7 +65,6 @@ from .export_dialog import ExportDialog
 from .choose_layers_dialog import ChooseLayersDialog
 
 
-# TODO: Have user set the destination CRS (planetary body dependent)
 # TODO: put units on attribute table headings
 # TODO: put polygon area in attribute table for that layer
 
@@ -504,7 +503,6 @@ class CircleCraters(object):
         return xform.transform(point)
 
     def get_destination_crs(self):
-        # 'Moon 2000'
         moon = '+proj=longlat +a=1737400 +b=1737400 +no_defs'
         destination = QgsCoordinateReferenceSystem()
         destination.createFromProj4(moon)
@@ -517,12 +515,10 @@ class CircleCraters(object):
         feature = QgsFeature()
         feature.setGeometry(geometry)
 
-        destination = self.get_destination_crs()
+        destination = self.layer.crs()
         source = self.layer.crs()
         xform = self.crs_transform(source, destination)
 
-        # This must be with respect to the center point of the crater
-        # Or else there is no projection information, duh!
         line = [
             QgsPoint(circle.center.x, circle.center.y),
             QgsPoint(circle.center.x + circle.radius, circle.center.y),
