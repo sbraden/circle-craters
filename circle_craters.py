@@ -364,7 +364,7 @@ class CircleCraters(object):
             fp.writelines('\t'.join(i) + '\n' for i in nested_list)
 
     def get_distance_area(self, layer):
-        destination = self.get_destination_crs()
+        destination = layer.crs()
 
         distance_area = QgsDistanceArea()
         distance_area.setSourceCrs(layer.crs())
@@ -398,7 +398,7 @@ class CircleCraters(object):
         use measure() takes QgsGeometry as a parameter and calculates distance
         or area
         """
-        destination = self.get_destination_crs()
+        destination = layer.crs()
         source = layer.crs()
         xform = self.crs_transform(source, destination)
         distance_area = self.get_distance_area(layer)
@@ -470,7 +470,7 @@ class CircleCraters(object):
         areas = list(area_layer.getFeatures())
 
         # TODO: distance_area and xform should probably be class variables
-        destination = self.get_destination_crs()
+        destination = crater_layer.crs()
         source = area_layer.crs()
         xform = self.crs_transform(source, destination)
         distance_area = self.get_distance_area(area_layer)
