@@ -494,9 +494,10 @@ class CircleCraters(object):
         return xform.transform(point)
 
     def get_destination_crs(self):
-        moon = '+proj=longlat +a=1737400 +b=1737400 +no_defs'
-        destination = QgsCoordinateReferenceSystem()
-        destination.createFromProj4(moon)
+        # moon = '+proj=longlat +a=1737400 +b=1737400 +no_defs'
+        # destination = QgsCoordinateReferenceSystem()
+        # destination.createFromProj4(moon)
+        destination = self.layer.crs()
         return destination
 
     def draw_circle(self, circle):
