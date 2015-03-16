@@ -16,15 +16,19 @@ Features include:
 * Projection independent
 
 Details
------
+-------
 
-* This QGIS plugin is designed to offer an open source alternative to the `craterTools`_ plugin for `ArcGIS`_.
+* This QGIS plugin is designed to offer an open source alternative to the
+  `craterTools`_ plugin for `ArcGIS`_.
 
-* `Crater counting`_ is a technique used by planetary scientists to estimate the age of a surface.
+* `Crater counting`_ is a technique used by planetary scientists to estimate the
+  age of a surface.
 
-* Collaboration is welcome! Please see the Issues page and the CONTRIBUTING.rst file.
+* Collaboration is welcome! Please see the Issues page and the CONTRIBUTING.rst
+  file.
 
-* CircleCraters was initially presented at the `2015 Lunar and Planetary Science Conference`_
+* CircleCraters was initially presented at the `2015 Lunar and Planetary Science
+  Conference`_
 
 * This plugin will be submitted to the QGIS plugin repository.
 
@@ -35,47 +39,56 @@ Installation
 
 1. First install QGIS.
 
-2. Download the contents of the git repository using the git clone command or downloading a zipfile.
+2. Download the contents of the git repository using the git clone command or
+   downloading a zipfile.
 
-3. Use the makefile to compile and copy the files to the QGIS plugin directory (run make deploy). The QGIS plugin directory should be in ~/.qgis2/python/plugins.
+3. Use the makefile to compile and copy the files to the QGIS plugin directory
+   (run make deploy). The QGIS plugin directory should be in
+   ~/.qgis2/python/plugins.
 
+4. On the command line run::
 
-4. On the command line run:
+       $ make deploy
 
-    $ make deploy
+5. You may get see the following error messages::
 
-5. You may get see the following error messages:
+       make: pyrcc4: Command not found.
 
-    make: pyrcc4: Command not found.
+   If you see this message install the Python Qt4 developer tools by running::
 
-If you see this message install the Python Qt4 developer tools by running:
+       $ sudo apt-get install pyqt4-dev-tool.
 
-    $sudo apt-get install pyqt4-dev-tool.
+   Another commmon error::
 
-Another commmon error:
+       make: sphinx-build: Command not found
 
-    make: sphinx-build: Command not found
+   If you see this message install the python sphinx library by running::
 
-If you see this message install the python sphinx library by running:
+       $ sudo apt-get install python-sphinx
 
-    $ sudo apt-get install python-sphinx
-
-6. Enable the plugin from the QGIS plugin manager. Go to Plugins > Manage and Install Plugins. This will connect you to the official QGIS plugin repository, but also searches the QGIS plugin directory on your machine for plugins. Find Circle Craters in the list and select the checkbox to the left of the name.
+6. Enable the plugin from the QGIS plugin manager. Go to Plugins > Manage and
+   Install Plugins. This will connect you to the official QGIS plugin
+   repository, but also searches the QGIS plugin directory on your machine for
+   plugins. Find Circle Craters in the list and select the checkbox to the left
+   of the name.
 
 Installation Tips for QGIS
-------------
+--------------------------
 
-`Instructions on QGIS.org`_. Hopefully this encourages you to try out QGIS if you have not used it before for planetary data!
+`Instructions on QGIS.org`_. Hopefully this encourages you to try out QGIS if
+you have not used it before for planetary data!
 
 Alternate Install For Mac OSX:
 
-The QGIS website links to a set of Mac OS X installers for QGIS. An alternative is to use Homebrew.
+The QGIS website links to a set of Mac OS X installers for QGIS. An alternative
+is to use Homebrew.
 
 1. Install `Homebrew`_
 
 2. Install GDAL with home brew
 
-3. Install Qt with home brew (remember to link, QGIS 2.6 uses Qt version 4.8 at this time)
+3. Install Qt with home brew (remember to link, QGIS 2.6 uses Qt version 4.8 at
+   this time)
 
 4. Install Pyqt with home brew
 
@@ -83,12 +96,14 @@ The QGIS website links to a set of Mac OS X installers for QGIS. An alternative 
 
 6. Install Matplotlib with home brew
 
-7. Install QGIS. Note: The brew/science tap is not the most stable tap for QGIS. It is recommended to use `this tap`_.
+7. Install QGIS. Note: The brew/science tap is not the most stable tap for QGIS.
+   It is recommended to use `this tap`_.
 
 Contributing
 ------------
 
-Feedback, issues, and contributions are always gratefully welcomed. See the `contributing guide`_ for details.
+Feedback, issues, and contributions are always gratefully welcomed. See the
+`contributing guide`_ for details.
 
 .. _QGIS: http://www.qgis.org
 .. _craterTools: http://hrscview.fu-berlin.de/software.html

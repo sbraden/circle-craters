@@ -69,7 +69,7 @@ PEP8EXCLUDE=pydev,resources_rc.py,conf.py,third_party,ui
 # Normally you would not need to edit below here
 #################################################
 
-HELP = help/build/html
+HELP = help/_build/html
 
 PLUGIN_UPLOAD = $(c)/plugin_upload.py
 

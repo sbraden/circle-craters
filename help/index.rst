@@ -6,10 +6,17 @@
 Welcome to CircleCraters's documentation!
 ============================================
 
-Contents:
+.. include:: ../README.rst
+
+Contents
+========
 
 .. toctree::
    :maxdepth: 2
+
+   contributing
+   authors
+   history
 
 Indices and tables
 ==================
