@@ -342,12 +342,13 @@ class CircleCraters(object):
         header = [
             '# Diam file for Craterstats',
             '# Date of measurement export = {}'.format(current_datetime),
-            '#',
-            'Area <km^2> = {}'.format(total_area),
+            '#', 
+            'Total_area = {} <km^2>'.format(total_area),
             '#',
             '#diameter, fraction, lon, lat',
-            '',
-        ]
+	    '# crater_diameters:',
+            'crater = {diam, fraction, lon, lat, topo_scale_factor\n',
+       ]
         return '\n'.join(header)
 
     def write_diam_file(self, crater_layer, area_layer, filename):
@@ -362,6 +363,7 @@ class CircleCraters(object):
         with open(filename, 'w') as fp:
             fp.write(header)
             fp.writelines('\t'.join(i) + '\n' for i in nested_list)
+	    fp.writelines('}\n') # close
 
     def get_distance_area(self, layer):
         destination = layer.crs()
@@ -389,7 +391,7 @@ class CircleCraters(object):
 
         transformed = [self.transform_point(xform, point) for point in points[0]]
         new_polygon = QgsGeometry.fromPolygon([transformed])
-        actual_area = distance_area.measure(new_polygon)
+        actual_area = distance_area.measureArea(new_polygon)
         return actual_area
 
     def compute_area(self, layer):
@@ -406,7 +408,7 @@ class CircleCraters(object):
         features = list(layer.getFeatures())
         return sum([self.get_actual_area(f, distance_area, xform) for f in features])
 
-    def get_fields(self, feature, diameter, lon, lat):
+    def get_fields(self, feature, diameter, lon, lat, topo_scale_factor):
         """Retrieves fields from the attribute table in the order required
         for .diam file: diameter, fraction, lon, lat
         And casts as strings"""
@@ -416,17 +418,18 @@ class CircleCraters(object):
         fraction = 1
         # refer to an attribute by its index
         field_list = [
-            str(self.convert_meters_to_km(attributes[diameter])),
+            str(self.convert_meters_to_km(float(attributes[diameter]))),
             str(fraction),
             str(attributes[lon]),
             str(attributes[lat]),
+	    str(topo_scale_factor),
         ]
         return field_list
 
     def crater_center(self, crater, lat, lon):
         center_point = QgsPoint(
-            crater.attributes()[lon],
-            crater.attributes()[lat],
+            float(crater.attributes()[lon]),
+            float(crater.attributes()[lat]),
         )
         return QgsGeometry.fromPoint(center_point)
 
@@ -465,6 +468,8 @@ class CircleCraters(object):
         diameter = crater_layer.fieldNameIndex('diameter')
         lon = crater_layer.fieldNameIndex('center_lon')
         lat = crater_layer.fieldNameIndex('center_lat')
+	fraction = 1
+	topo_scale_factor = 1
 
         craters = list(crater_layer.getFeatures())
         areas = list(area_layer.getFeatures())
@@ -478,7 +483,7 @@ class CircleCraters(object):
         new_geometries = [self.get_transformed_polygon(a, distance_area, xform) for a in areas]
 
         craters = [c for c in craters if self.intersects(c, new_geometries, lat, lon)]
-        return [self.get_fields(c, diameter, lon, lat) for c in craters]
+        return [self.get_fields(c, diameter, lon, lat, topo_scale_factor) for c in craters]
 
     def get_transformed_polygon(self, feature, distance_area, xform):
         """Returns transformd polygon geometry"""
@@ -523,7 +528,7 @@ class CircleCraters(object):
         new_line_geometry = QgsGeometry.fromPolyline(transformed)
 
         distance_area = self.get_distance_area(self.layer)
-        actual_line_distance = distance_area.measure(new_line_geometry)
+        actual_line_distance = distance_area.measureArea(new_line_geometry)
 
         # Translate circle center to units of degrees
         center_in_degrees = xform.transform(circle.center.x, circle.center.y)
