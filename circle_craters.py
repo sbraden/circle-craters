@@ -342,7 +342,7 @@ class CircleCraters(object):
         header = [
             '# Diam file for Craterstats',
             '# Date of measurement export = {}'.format(current_datetime),
-            '#', 
+            '#',
             'Total_area = {} <km^2>'.format(total_area),
             '#',
             '#diameter, fraction, lon, lat',
@@ -525,10 +525,9 @@ class CircleCraters(object):
             self.transform_point(xform, line[0]),
             self.transform_point(xform, line[1]),
         ]
-        new_line_geometry = QgsGeometry.fromPolyline(transformed)
 
         distance_area = self.get_distance_area(self.layer)
-        actual_line_distance = distance_area.measureArea(new_line_geometry)
+        actual_line_distance = distance_area.measureLine(transformed[0],transformed[1])
 
         # Translate circle center to units of degrees
         center_in_degrees = xform.transform(circle.center.x, circle.center.y)

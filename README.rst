@@ -56,7 +56,7 @@ Installation
 
    If you see this message install the Python Qt4 developer tools by running::
 
-       $ sudo apt-get install pyqt4-dev-tool.
+       $ sudo apt-get install pyqt4-dev-tools
 
    Another commmon error::
 
