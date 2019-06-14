@@ -36,13 +36,11 @@ from PyQt5.QtGui import QIcon
 #from qgis.PyQt import QIcon
 
 from qgis.core import (
-#    QGis,
     QgsDistanceArea,
     QgsFeature,
     QgsField,
     QgsGeometry,
     QgsMapLayer,
-#    QgsMapLayerRegistry,
     QgsCoordinateTransform,
     QgsCoordinateTransformContext,
     QgsCoordinateReferenceSystem,
@@ -304,10 +302,8 @@ class CircleCraters(object):
         return layer.geometryType() == QgsWkbTypes.PolygonGeometry
 
     def get_layer_choices(self):
-        #layers = list(QgsMapLayerRegistry.instance().mapLayers().values())
         root = QgsProject.instance().layerTreeRoot()
         layers = root.findLayers()
-        #mapLayer = lyr.layer() 
         return [layer.layer() for layer in layers if self.is_valid_layer(layer.layer())]
 
     def show_layer_select(self):
@@ -369,12 +365,13 @@ class CircleCraters(object):
             '# Diam file for Craterstats',
             '# Date of measurement export = {}'.format(current_datetime),
             '#',
-            'a_axis_radius = {}'.format(a),
-            'b_axis_radius = {}'.format(b),
-            'c_axis_radius = {}'.format(b),
+            'a_axis_radius = {} <km>'.format(a/1000.0),
+            'b_axis_radius = {} <km>'.format(b/1000.0),
+            'c_axis_radius = {} <km>'.format(b/1000.0),
+            '#',
             'Area <km^2> = {}'.format(total_area),
             '#',
-            '#diameter, fraction, lon, lat',
+            '#vertex_id, area_number, ext, lon, lat',
             '',
         ]
         return '\n'.join(header)
@@ -423,13 +420,13 @@ class CircleCraters(object):
         if feature.geometry().isMultipart(): # new part for multipolylines
            points = feature.geometry().asMultiPolygon()
            print("multipart:",len(points))
-        #points = feature.geometry() # .asPolygon()
-        
-        print("First: ",points[0][0])
-        for p in points[0][0]:
-           print(p)
-       
-        points = points[0][0]
+           print("First point: ",points[0][0])
+           for p in points[0][0]:
+              print(p)
+           points = points[0][0]
+        else:
+           points = feature.geometry().asPolygon()
+           points = points[0]
  
         transformed = [self.transform_point(xform, point) for point in points]
         new_polygon = QgsGeometry.fromPolygonXY([transformed])
@@ -461,7 +458,8 @@ class CircleCraters(object):
         # refer to an attribute by its index
         field_list = [
             str(self.convert_meters_to_km(attributes[diameter])),
-            str(fraction),
+            # fraction was in old craterstats
+            # str(fraction),
             str(attributes[lon]),
             str(attributes[lat]),
         ]
@@ -509,11 +507,8 @@ class CircleCraters(object):
         """Formats crater diameter data for export as .diam file
         Checks to see if craters intersect with area polygons in area layer
         """
-        #diameter = crater_layer.fieldNameIndex('diameter')
         diameter = crater_layer.fields().indexFromName('diameter')
-        #lon = crater_layer.fieldNameIndex('center_lon')
         lon = crater_layer.fields().indexFromName('center_lon')
-        #lat = crater_layer.fieldNameIndex('center_lat')
         lat = crater_layer.fields().indexFromName('center_lat')
 
         craters = list(crater_layer.getFeatures())
@@ -535,8 +530,18 @@ class CircleCraters(object):
     def get_transformed_polygon(self, feature, distance_area, xform):
         """Returns transformd polygon geometry"""
         # TODO: distance_area and xform should probably be class variables
-        points = feature.geometry().asMultiPolygon()
-        transformed = [self.transform_point(xform, point) for point in points[0][0]]
+        if feature.geometry().isMultipart(): # new part for multipolylines
+           points = feature.geometry().asMultiPolygon()
+           print("multipart:",len(points))
+           print("First point: ",points[0][0])
+           for p in points[0][0]:
+              print(p)
+           points = points[0][0]
+        else:
+           points = feature.geometry().asPolygon()
+           points = points[0]
+
+        transformed = [self.transform_point(xform, point) for point in points]
         print("TRANSFORMED->",transformed)
         return QgsGeometry.fromPolygonXY( [transformed] )
 
