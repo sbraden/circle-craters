@@ -8,9 +8,9 @@
 
 [general]
 name=Circle Craters
-qgisMinimumVersion=2.0
+qgisMinimumVersion=3.0
 description=A crater counting tool for planetary science
-version=0.1
+version=0.2
 author=Sarah E Braden
 email=braden.sarah@gmail.com
 
@@ -19,7 +19,7 @@ email=braden.sarah@gmail.com
 # Optional items:
 
 # Uncomment the following line and add your changelog:
-# changelog=
+changelog=CHANGELOG.md
 
 # Tags are comma separated with spaces allowed
 tags=
