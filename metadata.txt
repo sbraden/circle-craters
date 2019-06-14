@@ -19,10 +19,12 @@ email=braden.sarah@gmail.com
 # Optional items:
 
 # Uncomment the following line and add your changelog:
-changelog=CHANGELOG.md
+changelog=Changelog of CircleCraters:
+    0.1 - First release for QGIS 2.6 and CraterStats (1.0)
+    0.2 - Ported to python3/QGIS 3.x  
 
 # Tags are comma separated with spaces allowed
-tags=
+tags=planetary geology, mapping
 
 homepage=https://github.com/sbraden/circle-craters
 tracker=
