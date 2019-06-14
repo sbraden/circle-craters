@@ -32,7 +32,7 @@ Details
 
 * This plugin will be submitted to the QGIS plugin repository.
 
-* At this time the plugin does not work properly on QGIS 2.8 (Wien)
+* At this time the plugin does works properly on QGIS 3.4/3.6
 
 Installation
 ------------
