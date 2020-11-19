@@ -34,6 +34,18 @@ LOCALES =
 #LRELEASE = lrelease
 #LRELEASE = lrelease-qt4
 
+# OSX: darwin
+# Linux: linux
+OS_NAME := $(shell uname -s | tr A-Z a-z)
+
+ifeq ($(OS_NAME), linux)
+QGIS_PY_DIR=".local/share/QGIS/QGIS3/profiles/default/"
+endif
+ifeq ($(OS_NAME), darwin)
+QGIS_PY_DIR="Library/Application Support/QGIS/QGIS3/profiles/default/"
+endif
+
+# QGIS_PY_DIR=$$HOME/pippo
 
 # translation
 SOURCES = \
@@ -75,14 +87,15 @@ PLUGIN_UPLOAD = $(c)/plugin_upload.py
 
 RESOURCE_SRC=$(shell grep '^ *<file' resources.qrc | sed 's@</file>@@g;s/.*>//g' | tr '\n' ' ')
 
-QGISDIR=.qgis2
+#QGISDIR=.qgis2
+QGISDIR=$(QGIS_PY_DIR)
 
 default: compile
 
 compile: $(COMPILED_RESOURCE_FILES)
 
 %_rc.py : %.qrc $(RESOURCES_SRC)
-	pyrcc4 -o $*_rc.py  $<
+	pyrcc5 -o $*_rc.py  $<
 
 %.qm : %.ts
 	$(LRELEASE) $<

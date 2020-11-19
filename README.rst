@@ -43,8 +43,13 @@ Installation
    downloading a zipfile.
 
 3. Use the makefile to compile and copy the files to the QGIS plugin directory
-   (run make deploy). The QGIS plugin directory should be in
-   ~/.qgis2/python/plugins.
+   (run make deploy). 
+
+   On GNU/Linux systems, the QGIS plugin directory should be in 
+   ~/.local/share/QGIS/QGIS3/profiles/default/python/plugins/
+
+   On OSX system, the QGIS plugin directory should be in
+   ~/Library/Application\ Support/QGIS/QGIS3/profiles/default/python/plugins/
 
 4. On the command line run::
 

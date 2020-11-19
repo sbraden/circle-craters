@@ -371,7 +371,7 @@ class CircleCraters(object):
             '#',
             'Area <km^2> = {}'.format(total_area),
             '#',
-            '#vertex_id, area_number, ext, lon, lat',
+            # '#vertex_id, area_number, ext, lon, lat',
             '',
         ]
         return '\n'.join(header)
@@ -458,10 +458,12 @@ class CircleCraters(object):
         # refer to an attribute by its index
         field_list = [
             str(self.convert_meters_to_km(attributes[diameter])),
+            #str(1),
             # fraction was in old craterstats
             # str(fraction),
             str(attributes[lon]),
-            str(attributes[lat]),
+            str(attributes[lat])
+            #str(1)
         ]
         return field_list
 
@@ -525,6 +527,9 @@ class CircleCraters(object):
         # WARNING INTERSECTS 
         craters = [c for c in craters if self.intersects(c, new_geometries, lat, lon)]
         print("CRATERS: ",craters)
+        # Craterstats 2.0 line is:
+        # crater = {diam, fraction, lon, lat, topo_scale_factor
+        # 12.0185588932   1       159.43028979    16.9521753319   1
         return [self.get_fields(c, diameter, lon, lat) for c in craters]
 
     def get_transformed_polygon(self, feature, distance_area, xform):
