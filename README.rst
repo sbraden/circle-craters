@@ -83,26 +83,7 @@ Installation Tips for QGIS
 `Instructions on QGIS.org`_. Hopefully this encourages you to try out QGIS if
 you have not used it before for planetary data!
 
-Alternate Install For Mac OSX:
-
-The QGIS website links to a set of Mac OS X installers for QGIS. An alternative
-is to use Homebrew.
-
-1. Install `Homebrew`_
-
-2. Install GDAL with home brew
-
-3. Install Qt with home brew (remember to link, QGIS 2.6 uses Qt version 4.8 at
-   this time)
-
-4. Install Pyqt with home brew
-
-5. Install Numpy with home brew
-
-6. Install Matplotlib with home brew
-
-7. Install QGIS. Note: The brew/science tap is not the most stable tap for QGIS.
-   It is recommended to use `this tap`_.
+Windows / Linux / MacOSX QGIS Installers: https://qgis.org/en/site/forusers/download.html
 
 Contributing
 ------------
