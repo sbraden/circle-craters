@@ -14,7 +14,7 @@ __copyright__ = 'Copyright 2014, Sarah E Braden'
 
 import unittest
 
-from PyQt4.QtGui import QDialogButtonBox, QDialog
+from PyQt5.QtGui import QDialogButtonBox, QDialog
 
 from circle_craters_dialog import CircleCratersDialog
 
