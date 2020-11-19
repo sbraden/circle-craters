@@ -57,11 +57,11 @@ Installation
 
 5. You may get see the following error messages::
 
-       make: pyrcc4: Command not found.
+       make: pyrcc5: Command not found.
 
    If you see this message install the Python Qt4 developer tools by running::
 
-       $ sudo apt-get install pyqt4-dev-tool.
+       $ sudo apt-get install pyqt5-dev-tool.
 
    Another commmon error::
 
