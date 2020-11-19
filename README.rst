@@ -6,7 +6,7 @@ A crater-counting python plugin for `QGIS`_.
 
 Current Status: In Testing
 
-Originally written for and tested on QGIS version 2.6 (Brighton). Ported to python3/QGIS version 3.6.
+Originally written for and tested on QGIS version 2.6 (Brighton). Ported to python3/QGIS version 3.16.
 
 Features include:
 
