@@ -644,7 +644,7 @@ class CircleCraters(object):
 
         distance_area = self.get_distance_area(self.layer)
         actual_line_distance = distance_area.measureLength(new_line_geometry)
-
+        
         # Translate circle center to units of degrees
         center_in_degrees = xform.transform(circle.center.x, circle.center.y)
 
