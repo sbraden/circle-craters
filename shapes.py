@@ -157,7 +157,7 @@ class Circle(object):
         )
 
     def to_polygon(self, segments=64):
-        thetas = [(2 * math.pi) / segments * i for i in xrange(segments)]
+        thetas = [(2 * math.pi) / segments * i for i in range(segments)]
         return [self.point_at(theta) for theta in thetas]
 
     def __repr__(self):

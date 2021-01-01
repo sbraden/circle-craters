@@ -11,3 +11,4 @@ Contributors
 ------------
 
 * Trevor Olson <trevor@heytrevor.com>
+* Alessandro Frigeri <alessandro.frigeri@inaf.it>

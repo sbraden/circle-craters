@@ -11,49 +11,65 @@
         email                : braden.sarah@gmail.com
  ***************************************************************************/
 """
+from __future__ import absolute_import
+
+#from PyQt5 import QtCore
+from builtins import str
+from builtins import range
+from builtins import object
+import pdb
+
 import os.path
 import datetime
 from matplotlib.path import Path
 
-from PyQt4.QtCore import (
-    QCoreApplication,
-    QSettings,
-    QTranslator,
-    QVariant,
-    qVersion,
-)
+from qgis.PyQt.QtCore import QCoreApplication, QSettings, QTranslator, QVariant, qVersion
 
-from PyQt4.QtGui import (
-    QAction,
-    QIcon,
-)
+#from qgis.PyQt.QtGui import (
+#    QAction,
+#    QIcon,
+#)
+
+from qgis.PyQt.QtWidgets import QApplication, QAction, QMessageBox
+
+from PyQt5.QtGui import QIcon 
+#from qgis.PyQt import QIcon
 
 from qgis.core import (
-    QGis,
     QgsDistanceArea,
     QgsFeature,
     QgsField,
     QgsGeometry,
     QgsMapLayer,
-    QgsMapLayerRegistry,
     QgsCoordinateTransform,
+    QgsCoordinateTransformContext,
     QgsCoordinateReferenceSystem,
     QgsPoint,
+    QgsPointXY,
+    QgsProject,
+    QgsWkbTypes
 )
+
+# QgsMapLayerRegistry has been moved to QgsProject.
+
+from qgis.core import QgsSettings, QgsMessageLog, QgsMapLayer, QgsProject, QgsWkbTypes
 
 from qgis.gui import (
     QgsMapToolEmitPoint,
     QgsMessageBar,
 )
 
+import osr
+
 # Initialize Qt resources from file resources.py
-from . import resources_rc  # noqa
+#from . import resources_rc  
+import CircleCraters.resources_rc
 
-from .errors import CircleCraterError
-from .shapes import Point, Circle
+from CircleCraters.errors import CircleCraterError
+from CircleCraters.shapes import Point, Circle
 
-from .export_dialog import ExportDialog
-from .choose_layers_dialog import ChooseLayersDialog
+from CircleCraters.export_dialog import ExportDialog
+from CircleCraters.choose_layers_dialog import ChooseLayersDialog
 
 
 # TODO: put units on attribute table headings
@@ -129,12 +145,14 @@ class CircleCraters(object):
         return QCoreApplication.translate('CircleCraters', message)
 
     def show_error(self, message, title='Error', **kwargs):
+        # QgsMessageBar.CRITICAL
         self.iface.messageBar().pushMessage(
-            title, message, level=QgsMessageBar.CRITICAL, **kwargs)
+            title, message, level=4, **kwargs)
 
     def show_info(self, message, **kwargs):
+        # QgsMessageBar.INFO -> Qgis::Info
         self.iface.messageBar().pushMessage(
-            message, level=QgsMessageBar.INFO, **kwargs)
+            message, level=3, **kwargs)
 
     def add_action(
         self,
@@ -280,11 +298,13 @@ class CircleCraters(object):
     def is_valid_layer(self, layer):
         if layer.type() != QgsMapLayer.VectorLayer:
             return False
-        return layer.geometryType() == QGis.Polygon
+
+        return layer.geometryType() == QgsWkbTypes.PolygonGeometry
 
     def get_layer_choices(self):
-        layers = QgsMapLayerRegistry.instance().mapLayers().values()
-        return [layer for layer in layers if self.is_valid_layer(layer)]
+        root = QgsProject.instance().layerTreeRoot()
+        layers = root.findLayers()
+        return [layer.layer() for layer in layers if self.is_valid_layer(layer.layer())]
 
     def show_layer_select(self):
         """ Run method that lets users choose layer for crater shapefile.
@@ -309,15 +329,16 @@ class CircleCraters(object):
     def set_field_attributes(self):
         self.layer.startEditing()
 
-        if self.layer.fieldNameIndex('diameter') == -1:
+        # fieldNameIndex has been renamed to lookupField. 
+        if self.layer.fields().lookupField('diameter') == -1:
             field_attribute = QgsField('diameter', QVariant.Double)
             self.layer.dataProvider().addAttributes([field_attribute])
 
-        if self.layer.fieldNameIndex('center_lon') == -1:
+        if self.layer.fields().lookupField('center_lon') == -1:
             field_attribute = QgsField('center_lon', QVariant.Double)
             self.layer.dataProvider().addAttributes([field_attribute])
 
-        if self.layer.fieldNameIndex('center_lat') == -1:
+        if self.layer.fields().lookupField('center_lat') == -1:
             field_attribute = QgsField('center_lat', QVariant.Double)
             self.layer.dataProvider().addAttributes([field_attribute])
 
@@ -339,16 +360,20 @@ class CircleCraters(object):
 
     def create_diam_header(self, total_area):
         current_datetime = str(datetime.datetime.now())
+        a,b = self.get_a_and_b(self.layer)
         header = [
             '# Diam file for Craterstats',
             '# Date of measurement export = {}'.format(current_datetime),
             '#',
-            'Total_area = {} <km^2>'.format(total_area),
+            'a_axis_radius = {} <km>'.format(a/1000.0),
+            'b_axis_radius = {} <km>'.format(b/1000.0),
+            'c_axis_radius = {} <km>'.format(b/1000.0),
             '#',
-            '#diameter, fraction, lon, lat',
-	    '# crater_diameters:',
-            'crater = {diam, fraction, lon, lat, topo_scale_factor\n',
-       ]
+            'Area <km^2> = {}'.format(total_area),
+            '#',
+            # '#vertex_id, area_number, ext, lon, lat',
+            '',
+        ]
         return '\n'.join(header)
 
     def write_diam_file(self, crater_layer, area_layer, filename):
@@ -363,16 +388,18 @@ class CircleCraters(object):
         with open(filename, 'w') as fp:
             fp.write(header)
             fp.writelines('\t'.join(i) + '\n' for i in nested_list)
-	    fp.writelines('}\n') # close
 
     def get_distance_area(self, layer):
         destination = layer.crs()
 
+        # Using the general purpose distance and area calculator, 
+        # capable of performing ellipsoid based calculations.
         distance_area = QgsDistanceArea()
-        distance_area.setSourceCrs(layer.crs())
+        c = QgsCoordinateTransformContext()
+        distance_area.setSourceCrs(layer.crs(), c )
         distance_area.setEllipsoid(destination.ellipsoidAcronym())
         # sets whether coordinates must be projected to ellipsoid before measuring
-        distance_area.setEllipsoidalMode(True)
+        # distance_area.setEllipsoidalMode(True)
 
         return distance_area
 
@@ -383,14 +410,26 @@ class CircleCraters(object):
         return square_meters * 1.0e-6
 
     def measure(self, layer, geometry):
-        return self.get_distance_area(layer).measure(geometry)
+        return self.get_distance_area(layer).measureLength(geometry)
 
     def get_actual_area(self, feature, distance_area, xform):
         # TODO: distance_area and xform should probably be class variables
-        points = feature.geometry().asPolygon()
+        QgsMessageLog.logMessage("message", "name")
+        print("======>",feature.geometry()) 
 
-        transformed = [self.transform_point(xform, point) for point in points[0]]
-        new_polygon = QgsGeometry.fromPolygon([transformed])
+        if feature.geometry().isMultipart(): # new part for multipolylines
+           points = feature.geometry().asMultiPolygon()
+           print("multipart:",len(points))
+           print("First point: ",points[0][0])
+           for p in points[0][0]:
+              print(p)
+           points = points[0][0]
+        else:
+           points = feature.geometry().asPolygon()
+           points = points[0]
+ 
+        transformed = [self.transform_point(xform, point) for point in points]
+        new_polygon = QgsGeometry.fromPolygonXY([transformed])
         actual_area = distance_area.measureArea(new_polygon)
         return actual_area
 
@@ -408,7 +447,7 @@ class CircleCraters(object):
         features = list(layer.getFeatures())
         return sum([self.get_actual_area(f, distance_area, xform) for f in features])
 
-    def get_fields(self, feature, diameter, lon, lat, topo_scale_factor):
+    def get_fields(self, feature, diameter, lon, lat):
         """Retrieves fields from the attribute table in the order required
         for .diam file: diameter, fraction, lon, lat
         And casts as strings"""
@@ -418,20 +457,25 @@ class CircleCraters(object):
         fraction = 1
         # refer to an attribute by its index
         field_list = [
-            str(self.convert_meters_to_km(float(attributes[diameter]))),
-            str(fraction),
+            str(self.convert_meters_to_km(attributes[diameter])),
+            #str(1),
+            # fraction was in old craterstats
+            # str(fraction),
             str(attributes[lon]),
-            str(attributes[lat]),
-	    str(topo_scale_factor),
+            str(attributes[lat])
+            #str(1)
         ]
         return field_list
 
     def crater_center(self, crater, lat, lon):
-        center_point = QgsPoint(
+        print(crater)
+        print("ATT:",crater.attributes(),lat,lon,crater.attributes()[lon],crater.attributes()[lat] )
+        center_point = QgsPointXY(
             float(crater.attributes()[lon]),
             float(crater.attributes()[lat]),
         )
-        return QgsGeometry.fromPoint(center_point)
+
+        return QgsGeometry.fromPointXY(center_point)
 
     def experiment(self, feature_geom, point_geom):
         """
@@ -465,11 +509,9 @@ class CircleCraters(object):
         """Formats crater diameter data for export as .diam file
         Checks to see if craters intersect with area polygons in area layer
         """
-        diameter = crater_layer.fieldNameIndex('diameter')
-        lon = crater_layer.fieldNameIndex('center_lon')
-        lat = crater_layer.fieldNameIndex('center_lat')
-	fraction = 1
-	topo_scale_factor = 1
+        diameter = crater_layer.fields().indexFromName('diameter')
+        lon = crater_layer.fields().indexFromName('center_lon')
+        lat = crater_layer.fields().indexFromName('center_lat')
 
         craters = list(crater_layer.getFeatures())
         areas = list(area_layer.getFeatures())
@@ -482,18 +524,35 @@ class CircleCraters(object):
         # Get area geometry in units of degrees
         new_geometries = [self.get_transformed_polygon(a, distance_area, xform) for a in areas]
 
+        # WARNING INTERSECTS 
         craters = [c for c in craters if self.intersects(c, new_geometries, lat, lon)]
-        return [self.get_fields(c, diameter, lon, lat, topo_scale_factor) for c in craters]
+        print("CRATERS: ",craters)
+        # Craterstats 2.0 line is:
+        # crater = {diam, fraction, lon, lat, topo_scale_factor
+        # 12.0185588932   1       159.43028979    16.9521753319   1
+        return [self.get_fields(c, diameter, lon, lat) for c in craters]
 
     def get_transformed_polygon(self, feature, distance_area, xform):
         """Returns transformd polygon geometry"""
         # TODO: distance_area and xform should probably be class variables
-        points = feature.geometry().asPolygon()
-        transformed = [self.transform_point(xform, point) for point in points[0]]
-        return QgsGeometry.fromPolygon([transformed])
+        if feature.geometry().isMultipart(): # new part for multipolylines
+           points = feature.geometry().asMultiPolygon()
+           print("multipart:",len(points))
+           print("First point: ",points[0][0])
+           for p in points[0][0]:
+              print(p)
+           points = points[0][0]
+        else:
+           points = feature.geometry().asPolygon()
+           points = points[0]
+
+        transformed = [self.transform_point(xform, point) for point in points]
+        print("TRANSFORMED->",transformed)
+        return QgsGeometry.fromPolygonXY( [transformed] )
 
     def crs_transform(self, source, destination):
-        return QgsCoordinateTransform(source, destination)
+        print(source, destination, QgsProject.instance()  )
+        return QgsCoordinateTransform(source, destination, QgsProject.instance())
 
     def transform_point(self, xform, point):
         return xform.transform(point)
@@ -505,9 +564,58 @@ class CircleCraters(object):
         destination = self.layer.crs()
         return destination
 
+    def get_latlong_srs(self):
+        p = QgsProject.instance()
+        e = p.ellipsoid()
+        crs = p.crs()
+        srs = osr.SpatialReference()
+        srs.ImportFromProj4(crs.toProj4())
+        a = srs.GetSemiMajor()
+        b = srs.GetSemiMinor()
+        proj4 = "+proj=latlong +a={} +b={}".format(a,b)
+        srs_ll = osr.SpatialReference()
+        srs_ll.ImportFromProj4(proj4)
+        return srs_ll
+
+    def get_srs(self):
+        p = QgsProject.instance()
+        e = p.ellipsoid()
+        crs = p.crs()
+        srs = osr.SpatialReference()
+        srs.ImportFromProj4(crs.toProj4())
+        return srs
+
+    def get_a_and_b(self,layer):
+        #this_crs = layer.crs()
+        #wkt = this_crs.toWkt()
+        #srs = osr.SpatialReference()
+        #srs.importFromWkt(wkt)
+        #print(srs)
+        #print(dir(this_crs))
+        p = QgsProject.instance()
+        e = p.ellipsoid()
+        crs = p.crs()
+        srs = osr.SpatialReference()
+        srs.ImportFromProj4(crs.toProj4())
+        print("******",e)
+        da = QgsDistanceArea()  
+        da.willUseEllipsoid() # should be true
+        a = srs.GetSemiMajor()
+        b = srs.GetSemiMinor()
+        return a,b
+
     def draw_circle(self, circle):
-        polygon = [QgsPoint(*point) for point in circle.to_polygon()]
-        geometry = QgsGeometry.fromPolygon([polygon])
+        polygon = [QgsPointXY(*point) for point in circle.to_polygon()]
+        print(circle)
+        print(polygon)
+        print(type(polygon))
+
+        #gPnt = QgsGeometry.fromPointXY(QgsPointXY(1,1))
+        #gLine = QgsGeometry.fromPolyline([QgsPoint(1, 1), QgsPoint(2, 2)])
+        #gPolygon = QgsGeometry.fromPolygonXY([[QgsPointXY(1, 1), QgsPointXY(2, 2), QgsPointXY(2, 1)]])
+
+        #geometry = QgsGeometry.fromPolygon([polygon])
+        geometry = QgsGeometry.fromPolygonXY([polygon])
 
         feature = QgsFeature()
         feature.setGeometry(geometry)
@@ -516,9 +624,12 @@ class CircleCraters(object):
         source = self.layer.crs()
         xform = self.crs_transform(source, destination)
 
+        #print circle.center.x, circle.center.y
+        #print(circle.center.x, circle.center.y)
+
         line = [
-            QgsPoint(circle.center.x, circle.center.y),
-            QgsPoint(circle.center.x + circle.radius, circle.center.y),
+            QgsPointXY(circle.center.x, circle.center.y),
+            QgsPointXY(circle.center.x + circle.radius, circle.center.y),
         ]
 
         transformed = [
@@ -526,9 +637,14 @@ class CircleCraters(object):
             self.transform_point(xform, line[1]),
         ]
 
-        distance_area = self.get_distance_area(self.layer)
-        actual_line_distance = distance_area.measureLine(transformed[0],transformed[1])
+        print("****",transformed)
 
+        #new_line_geometry = QgsGeometry.fromPolyline( [ QgsGeometry.fromPointXY(transformed[0]), QgsGeometry.fromPointXY(transformed[1]) ]  )
+        new_line_geometry = QgsGeometry.fromPolyline([QgsPoint(transformed[0][0], transformed[0][1]), QgsPoint(transformed[1][0], transformed[1][1])])
+
+        distance_area = self.get_distance_area(self.layer)
+        actual_line_distance = distance_area.measureLength(new_line_geometry)
+        
         # Translate circle center to units of degrees
         center_in_degrees = xform.transform(circle.center.x, circle.center.y)
 
@@ -542,8 +658,8 @@ class CircleCraters(object):
         ])
 
         self.layer.startEditing()
-        # self.layer.dataProvider().addFeatures([feature])
-        self.layer.addFeature(feature, True)
+        self.layer.dataProvider().addFeatures([feature])
+        #self.layer.addFeature(feature, True)
         self.layer.commitChanges()
 
         # update layer's extent when new features have been added

@@ -23,7 +23,7 @@
 
 import os
 
-from PyQt4 import QtGui, QtCore, uic
+from PyQt5 import QtGui, QtCore, uic
 
 from .errors import CircleCraterError
 
