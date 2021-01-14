@@ -61,7 +61,13 @@ Installation
 
    If you see this message install the Python Qt4 developer tools by running::
 
-       $ sudo apt-get install pyqt5-dev-tool.
+   On GNU/Linux systems,
+
+       $ sudo apt-get install pyqt5-dev-tool
+
+   On OSX system,
+
+       $ brew install pyqt
 
    Another commmon error::
 
@@ -69,7 +75,15 @@ Installation
 
    If you see this message install the python sphinx library by running::
 
+   On GNU/Linux systems,
+
        $ sudo apt-get install python-sphinx
+
+   On OSX system,
+
+       $ brew install sphinx-doc
+   
+   And make sure that sphinx has been added to system PATH.
 
 6. Enable the plugin from the QGIS plugin manager. Go to Plugins > Manage and
    Install Plugins. This will connect you to the official QGIS plugin
