@@ -42,7 +42,7 @@ ifeq ($(OS_NAME), linux)
 QGIS_PY_DIR=".local/share/QGIS/QGIS3/profiles/default/"
 endif
 ifeq ($(OS_NAME), darwin)
-QGIS_PY_DIR="Library/Application Support/QGIS/QGIS3/profiles/default/"
+QGIS_PY_DIR=Library/Application\ Support/QGIS/QGIS3/profiles/default
 endif
 
 # QGIS_PY_DIR=$$HOME/pippo
