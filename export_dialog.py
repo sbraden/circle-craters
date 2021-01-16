@@ -48,7 +48,7 @@ class ExportDialog(QtWidgets.QDialog, ExportDialogBase):
         self.filename_choose_button.clicked.connect(self.choose_file)
 
     def choose_file(self):
-        self.filename_input.setText(QtGui.QFileDialog.getSaveFileName())
+        self.filename_input.setText(QtWidgets.QFileDialog.getSaveFileName()[0])
 
     def show(self, choices):
         if not choices:
