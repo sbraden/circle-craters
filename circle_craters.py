@@ -619,6 +619,7 @@ class CircleCraters(object):
 
         feature = QgsFeature()
         feature.setGeometry(geometry)
+        feature.setFields(self.layer.fields())
 
         destination = self.layer.crs()
         source = self.layer.crs()
@@ -650,12 +651,9 @@ class CircleCraters(object):
 
         # circle_feature.id() is NULL right now
         # order is id, diameter, lon, lat
-        feature.setAttributes([
-            feature.id(),
-            actual_line_distance * 2,
-            center_in_degrees[0],
-            center_in_degrees[1],
-        ])
+        feature.setAttribute('diameter',actual_line_distance * 2)
+        feature.setAttribute('center_lon',center_in_degrees[0])
+        feature.setAttribute('center_lat',center_in_degrees[1])
 
         self.layer.startEditing()
         self.layer.dataProvider().addFeatures([feature])
