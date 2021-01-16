@@ -23,7 +23,7 @@
 
 import os
 
-from PyQt5 import QtGui, QtCore, uic
+from PyQt5 import QtGui, QtCore, uic, QtWidgets
 
 from .errors import CircleCraterError
 
@@ -32,7 +32,7 @@ ExportDialogBase, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'export_dialog_base.ui'))
 
 
-class ExportDialog(QtGui.QDialog, ExportDialogBase):
+class ExportDialog(QtWidgets.QDialog, ExportDialogBase):
     selected = QtCore.pyqtSignal(object, object, str)
 
     def __init__(self, parent=None):
