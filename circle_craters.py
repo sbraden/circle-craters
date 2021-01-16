@@ -649,7 +649,8 @@ class CircleCraters(object):
         # Translate circle center to units of degrees
         center_in_degrees = xform.transform(circle.center.x, circle.center.y)
 
-        # circle_feature.id() is NULL right now
+        # circle_feature.id() is NULL for .shp file
+        # and assigned automaticly for .gpkg
         # order is id, diameter, lon, lat
         feature.setAttribute('diameter',actual_line_distance * 2)
         feature.setAttribute('center_lon',center_in_degrees[0])
