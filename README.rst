@@ -46,10 +46,12 @@ Installation
    (run make deploy). 
 
    On GNU/Linux systems, the QGIS plugin directory should be in 
-   ~/.local/share/QGIS/QGIS3/profiles/default/python/plugins/
+   
+      ~/.local/share/QGIS/QGIS3/profiles/default/python/plugins/
 
    On OSX system, the QGIS plugin directory should be in
-   ~/Library/Application\ Support/QGIS/QGIS3/profiles/default/python/plugins/
+   
+      ~/Library/Application\ Support/QGIS/QGIS3/profiles/default/python/plugins/
 
 4. On the command line run::
 
@@ -59,7 +61,7 @@ Installation
 
        make: pyrcc5: Command not found.
 
-   If you see this message install the Python Qt4 developer tools by running::
+   If you see this message install the Python Qt5 developer tools by running::
 
        $ sudo apt-get install pyqt5-dev-tool.
 
