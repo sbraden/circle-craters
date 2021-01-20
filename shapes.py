@@ -132,7 +132,7 @@ class Circle(object):
         if len(vertices) != 3:
             raise ValueError('a circle must have three vertices')
 
-        if Point.is_collinear(vertices):
+        if Point.is_collinear(vertices, error=1e-2):
             raise ValueError('vertices are collinear')
 
         self.vertices = vertices

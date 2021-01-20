@@ -59,7 +59,7 @@ from qgis.gui import (
     QgsMessageBar,
 )
 
-import osr
+from osgeo import osr
 
 # Initialize Qt resources from file resources.py
 #from . import resources_rc  
@@ -360,20 +360,34 @@ class CircleCraters(object):
 
     def create_diam_header(self, total_area):
         current_datetime = str(datetime.datetime.now())
-        a,b = self.get_a_and_b(self.layer)
-        header = [
-            '# Diam file for Craterstats',
-            '# Date of measurement export = {}'.format(current_datetime),
-            '#',
-            'a_axis_radius = {} <km>'.format(a/1000.0),
-            'b_axis_radius = {} <km>'.format(b/1000.0),
-            'c_axis_radius = {} <km>'.format(b/1000.0),
-            '#',
-            'Area <km^2> = {}'.format(total_area),
-            '#',
-            '# diameter, lon, lat',
-            '',
-        ]
+        # a,b = self.get_a_and_b(self.layer)
+        da = self.get_distance_area(self.layer)
+        if da.willUseEllipsoid():
+            header = [
+                '# Diam file for Craterstats',
+                '# Date of measurement export = {}'.format(current_datetime),
+                '',
+                'Ellipsoid {}'.format(da.ellipsoid()),
+                '',
+                'layer CRS: {}'.format(self.layer.crs().description()),
+                '',
+                'Total Crater Area <km^2> = {}'.format(total_area),
+                '',
+                '# diameter(m), lon, lat',
+                '',
+            ]
+        else:
+            header = [
+                '# Diam file for Craterstats',
+                '# Date of measurement export = {}'.format(current_datetime),
+                '',
+                '# Ellipsoid is not available, Area and Diameter unit may not right.',
+                '',
+                'Total Crater Area = {}'.format(total_area),
+                '',
+                '# diameter, lon, lat',
+                '',
+            ]
         return '\n'.join(header)
 
     def write_diam_file(self, crater_layer, area_layer, filename):
@@ -397,7 +411,10 @@ class CircleCraters(object):
         distance_area = QgsDistanceArea()
         c = QgsCoordinateTransformContext()
         distance_area.setSourceCrs(layer.crs(), c )
-        distance_area.setEllipsoid(destination.ellipsoidAcronym())
+        ellips = destination.ellipsoidAcronym()
+        if ellips == '' :
+            ellips = QgsProject.instance().ellipsoid()
+        distance_area.setEllipsoid(ellips)
         # sets whether coordinates must be projected to ellipsoid before measuring
         # distance_area.setEllipsoidalMode(True)
 
