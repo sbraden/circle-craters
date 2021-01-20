@@ -3,4 +3,4 @@
 
 class CircleCraterError(Exception):
     def __init__(self, message_str = ''):
-        message = message_str
+        self.message = message_str
