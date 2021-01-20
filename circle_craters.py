@@ -371,7 +371,7 @@ class CircleCraters(object):
             '#',
             'Area <km^2> = {}'.format(total_area),
             '#',
-            # '#vertex_id, area_number, ext, lon, lat',
+            '# diameter, lon, lat',
             '',
         ]
         return '\n'.join(header)
@@ -449,7 +449,7 @@ class CircleCraters(object):
 
     def get_fields(self, feature, diameter, lon, lat):
         """Retrieves fields from the attribute table in the order required
-        for .diam file: diameter, fraction, lon, lat
+        for .diam file: diameter, lon, lat
         And casts as strings"""
         # diameter is in units of km
         attributes = feature.attributes()
