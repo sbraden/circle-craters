@@ -358,7 +358,7 @@ class CircleCraters(object):
         except CircleCraterError as error:
             self.show_error(error.message)
 
-    def create_diam_header(self, total_area):
+    def create_diam_header(self, total_area, crater_layer):
         current_datetime = str(datetime.datetime.now())
         # a,b = self.get_a_and_b(self.layer)
         da = self.get_distance_area(self.layer)
@@ -369,7 +369,7 @@ class CircleCraters(object):
                 '',
                 'Ellipsoid {}'.format(da.ellipsoid()),
                 '',
-                'layer CRS: {}'.format(self.layer.crs().description()),
+                'layer CRS: {}'.format(crater_layer.crs().description()),
                 '',
                 'Total Crater Area <km^2> = {}'.format(total_area),
                 '',
@@ -395,7 +395,7 @@ class CircleCraters(object):
         total_area = self.compute_area(area_layer)
         km_squared = self.convert_square_meters_to_km(total_area)
 
-        header = self.create_diam_header(km_squared)
+        header = self.create_diam_header(km_squared, crater_layer)
         nested_list = self.format_diam_data(crater_layer, area_layer)
 
         # tab delimited datafile
