@@ -22,6 +22,7 @@ email=braden.sarah@gmail.com
 changelog=Changelog of CircleCraters:
     0.1 - First release for QGIS 2.6 and CraterStats (1.0)
     0.2 - Ported to python3/QGIS 3.x  
+    0.2.1 - Bug fix and gpkg compatibility
 
 # Tags are comma separated with spaces allowed
 tags=planetary geology, mapping

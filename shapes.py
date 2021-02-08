@@ -50,8 +50,9 @@ class Point(object):
 
         for point in points:
             delta_b = point - p1
-            determinant = (delta_a.x * delta_b.y) - (delta_a.y * delta_b.x)
-            if abs(determinant) > error:
+            # cosine of delta_a and delta_b
+            determinant = (delta_a.x * delta_b.x + delta_a.y * delta_b.y)/math.sqrt(delta_a.x**2+delta_a.y**2)/math.sqrt(delta_b.x**2+delta_b.y**2)
+            if (1.0 - abs(determinant)) > error:
                 return False
 
         return True
@@ -131,7 +132,7 @@ class Circle(object):
         if len(vertices) != 3:
             raise ValueError('a circle must have three vertices')
 
-        if Point.is_collinear(vertices):
+        if Point.is_collinear(vertices, error=1e-2):
             raise ValueError('vertices are collinear')
 
         self.vertices = vertices

@@ -59,7 +59,7 @@ from qgis.gui import (
     QgsMessageBar,
 )
 
-import osr
+from osgeo import osr
 
 # Initialize Qt resources from file resources.py
 #from . import resources_rc  
@@ -358,22 +358,36 @@ class CircleCraters(object):
         except CircleCraterError as error:
             self.show_error(error.message)
 
-    def create_diam_header(self, total_area):
+    def create_diam_header(self, total_area, crater_layer):
         current_datetime = str(datetime.datetime.now())
-        a,b = self.get_a_and_b(self.layer)
-        header = [
-            '# Diam file for Craterstats',
-            '# Date of measurement export = {}'.format(current_datetime),
-            '#',
-            'a_axis_radius = {} <km>'.format(a/1000.0),
-            'b_axis_radius = {} <km>'.format(b/1000.0),
-            'c_axis_radius = {} <km>'.format(b/1000.0),
-            '#',
-            'Area <km^2> = {}'.format(total_area),
-            '#',
-            # '#vertex_id, area_number, ext, lon, lat',
-            '',
-        ]
+        # a,b = self.get_a_and_b(self.layer)
+        da = self.get_distance_area(self.layer)
+        if da.willUseEllipsoid():
+            header = [
+                '# Diam file for Craterstats',
+                '# Date of measurement export = {}'.format(current_datetime),
+                '',
+                'Ellipsoid {}'.format(da.ellipsoid()),
+                '',
+                'layer CRS: {}'.format(crater_layer.crs().description()),
+                '',
+                'Total Crater Area <km^2> = {}'.format(total_area),
+                '',
+                '# diameter(m), lon, lat',
+                '',
+            ]
+        else:
+            header = [
+                '# Diam file for Craterstats',
+                '# Date of measurement export = {}'.format(current_datetime),
+                '',
+                '# Ellipsoid is not available, Area and Diameter unit may not right.',
+                '',
+                'Total Crater Area = {}'.format(total_area),
+                '',
+                '# diameter, lon, lat',
+                '',
+            ]
         return '\n'.join(header)
 
     def write_diam_file(self, crater_layer, area_layer, filename):
@@ -381,7 +395,7 @@ class CircleCraters(object):
         total_area = self.compute_area(area_layer)
         km_squared = self.convert_square_meters_to_km(total_area)
 
-        header = self.create_diam_header(km_squared)
+        header = self.create_diam_header(km_squared, crater_layer)
         nested_list = self.format_diam_data(crater_layer, area_layer)
 
         # tab delimited datafile
@@ -397,7 +411,10 @@ class CircleCraters(object):
         distance_area = QgsDistanceArea()
         c = QgsCoordinateTransformContext()
         distance_area.setSourceCrs(layer.crs(), c )
-        distance_area.setEllipsoid(destination.ellipsoidAcronym())
+        ellips = destination.ellipsoidAcronym()
+        if ellips == '' :
+            ellips = QgsProject.instance().ellipsoid()
+        distance_area.setEllipsoid(ellips)
         # sets whether coordinates must be projected to ellipsoid before measuring
         # distance_area.setEllipsoidalMode(True)
 
@@ -449,7 +466,7 @@ class CircleCraters(object):
 
     def get_fields(self, feature, diameter, lon, lat):
         """Retrieves fields from the attribute table in the order required
-        for .diam file: diameter, fraction, lon, lat
+        for .diam file: diameter, lon, lat
         And casts as strings"""
         # diameter is in units of km
         attributes = feature.attributes()
@@ -619,6 +636,7 @@ class CircleCraters(object):
 
         feature = QgsFeature()
         feature.setGeometry(geometry)
+        feature.setFields(self.layer.fields())
 
         destination = self.layer.crs()
         source = self.layer.crs()
@@ -648,14 +666,12 @@ class CircleCraters(object):
         # Translate circle center to units of degrees
         center_in_degrees = xform.transform(circle.center.x, circle.center.y)
 
-        # circle_feature.id() is NULL right now
+        # circle_feature.id() is NULL for .shp file
+        # and assigned automaticly for .gpkg
         # order is id, diameter, lon, lat
-        feature.setAttributes([
-            feature.id(),
-            actual_line_distance * 2,
-            center_in_degrees[0],
-            center_in_degrees[1],
-        ])
+        feature.setAttribute('diameter',actual_line_distance * 2)
+        feature.setAttribute('center_lon',center_in_degrees[0])
+        feature.setAttribute('center_lat',center_in_degrees[1])
 
         self.layer.startEditing()
         self.layer.dataProvider().addFeatures([feature])

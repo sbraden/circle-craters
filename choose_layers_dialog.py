@@ -14,7 +14,7 @@
 
 import os
 
-from PyQt5 import QtGui, QtCore, uic
+from PyQt5 import QtGui, QtCore, uic, QtWidgets
 
 from .errors import CircleCraterError
 
@@ -23,7 +23,7 @@ ChooseLayersDialogBase, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'choose_layers_dialog_base.ui'))
 
 
-class ChooseLayersDialog(QtGui.QDialog, ChooseLayersDialogBase):
+class ChooseLayersDialog(QtWidgets.QDialog, ChooseLayersDialogBase):
     selected = QtCore.pyqtSignal(object)
 
     def __init__(self, parent=None):

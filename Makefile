@@ -42,7 +42,7 @@ ifeq ($(OS_NAME), linux)
 QGIS_PY_DIR=".local/share/QGIS/QGIS3/profiles/default/"
 endif
 ifeq ($(OS_NAME), darwin)
-QGIS_PY_DIR="Library/Application Support/QGIS/QGIS3/profiles/default/"
+QGIS_PY_DIR=Library/Application\ Support/QGIS/QGIS3/profiles/default
 endif
 
 # QGIS_PY_DIR=$$HOME/pippo
@@ -121,11 +121,11 @@ test: compile transcompile
 deploy: compile doc transcompile
 	@echo
 	@echo "------------------------------------------"
-	@echo "Deploying plugin to your .qgis2 directory."
+	@echo "Deploying plugin to your .qgis2/ .qgis3 directory."
 	@echo "------------------------------------------"
 	# The deploy  target only works on unix like operating system where
 	# the Python plugin directory is located at:
-	# $HOME/$(QGISDIR)/python/plugins
+	# ${HOME}/$(QGISDIR)/python/plugins
 	mkdir -p $(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)
 	cp -vf $(PY_FILES) $(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)
 	cp -vf $(UI_FILES) $(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)
