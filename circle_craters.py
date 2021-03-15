@@ -66,10 +66,11 @@ from osgeo import osr
 import CircleCraters.resources_rc
 
 from CircleCraters.errors import CircleCraterError
-from CircleCraters.shapes import Point, Circle
+from CircleCraters.shapes import Point, Circle, DetectedCircle
 
 from CircleCraters.export_dialog import ExportDialog
 from CircleCraters.choose_layers_dialog import ChooseLayersDialog
+#from CircleCraters.find_crater import DetectedCircle
 
 
 # TODO: put units on attribute table headings
@@ -128,6 +129,7 @@ class CircleCraters(object):
         self.clicks = []
 
         self.layer = None
+        self.raster_layer = None
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -273,13 +275,14 @@ class CircleCraters(object):
         self.clicks = []
 
     def handle_click(self, point, button):
-        self.clicks.append(Point(point.x(), point.y()))
+        #self.clicks.append(Point(point.x(), point.y()))
+        x, y = point.x(), point.y()
+        r = 16
+        #if len(self.clicks) != 3:
+        #    return
 
-        if len(self.clicks) != 3:
-            return
-
-        self.draw_circle(Circle(*self.clicks))
-        self.reset_clicks()
+        self.draw_circle(DetectedCircle(self.raster_layer, x, y, r_in=r))
+        #self.reset_clicks()
 
     def set_tool(self):
         """Run method that performs all the real work"""
@@ -645,9 +648,14 @@ class CircleCraters(object):
         #print circle.center.x, circle.center.y
         #print(circle.center.x, circle.center.y)
 
+        #line = [
+        #    QgsPointXY(circle.center.x, circle.center.y),
+        #    QgsPointXY(circle.center.x + circle.radius, circle.center.y),
+        #]
+
         line = [
-            QgsPointXY(circle.center.x, circle.center.y),
-            QgsPointXY(circle.center.x + circle.radius, circle.center.y),
+            QgsPointXY(circle.a, circle.b),
+            QgsPointXY(circle.a + circle.r, circle.b),
         ]
 
         transformed = [
@@ -664,14 +672,14 @@ class CircleCraters(object):
         actual_line_distance = distance_area.measureLength(new_line_geometry)
         
         # Translate circle center to units of degrees
-        center_in_degrees = xform.transform(circle.center.x, circle.center.y)
+        center_in_degrees = xform.transform(circle.a, circle.b)
 
         # circle_feature.id() is NULL for .shp file
         # and assigned automaticly for .gpkg
         # order is id, diameter, lon, lat
-        feature.setAttribute('diameter',actual_line_distance * 2)
-        feature.setAttribute('center_lon',center_in_degrees[0])
-        feature.setAttribute('center_lat',center_in_degrees[1])
+        feature.setAttribute('diameter',circle.diameter)
+        feature.setAttribute('center_lon',circle.a)
+        feature.setAttribute('center_lat',circle.b)
 
         self.layer.startEditing()
         self.layer.dataProvider().addFeatures([feature])
