@@ -672,6 +672,7 @@ class CircleCraters(object):
 
         distance_area = self.get_distance_area(self.layer)
         actual_line_distance = distance_area.convertLengthMeasurement(distance_area.measureLength(new_line_geometry), QgsUnitTypes.DistanceMeters)
+        # TODO: still cannot convert to meters when layer is geo crs. If a ellips is set to distance_area, the diameter is multiplied a radii when layer is projected crs
         
         # Translate circle center to units of degrees
         center_in_degrees = xform_to_latlon.transform(circle.center.x, circle.center.y)
