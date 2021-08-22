@@ -47,12 +47,13 @@ from qgis.core import (
     QgsPoint,
     QgsPointXY,
     QgsProject,
-    QgsWkbTypes
+    QgsSettings, 
+    QgsMessageLog, 
+    QgsWkbTypes,
+    QgsUnitTypes,
 )
 
 # QgsMapLayerRegistry has been moved to QgsProject.
-
-from qgis.core import QgsSettings, QgsMessageLog, QgsMapLayer, QgsProject, QgsWkbTypes
 
 from qgis.gui import (
     QgsMapToolEmitPoint,
@@ -361,7 +362,7 @@ class CircleCraters(object):
     def create_diam_header(self, total_area, crater_layer):
         current_datetime = str(datetime.datetime.now())
         # a,b = self.get_a_and_b(self.layer)
-        da = self.get_distance_area(self.layer)
+        da = self.get_distance_area(crater_layer)
         if da.willUseEllipsoid():
             header = [
                 '# Diam file for Craterstats',
@@ -410,11 +411,9 @@ class CircleCraters(object):
         # capable of performing ellipsoid based calculations.
         distance_area = QgsDistanceArea()
         c = QgsCoordinateTransformContext()
+        c.clear()
+        # distance_area.setEllipsoid(*self.get_a_and_b(layer))
         distance_area.setSourceCrs(layer.crs(), c )
-        ellips = destination.ellipsoidAcronym()
-        if ellips == '' :
-            ellips = QgsProject.instance().ellipsoid()
-        distance_area.setEllipsoid(ellips)
         # sets whether coordinates must be projected to ellipsoid before measuring
         # distance_area.setEllipsoidalMode(True)
 
@@ -431,7 +430,7 @@ class CircleCraters(object):
 
     def get_actual_area(self, feature, distance_area, xform):
         # TODO: distance_area and xform should probably be class variables
-        QgsMessageLog.logMessage("message", "name")
+        # QgsMessageLog.logMessage("message", "name")
         print("======>",feature.geometry()) 
 
         if feature.geometry().isMultipart(): # new part for multipolylines
@@ -575,10 +574,14 @@ class CircleCraters(object):
         return xform.transform(point)
 
     def get_destination_crs(self):
-        # moon = '+proj=longlat +a=1737400 +b=1737400 +no_defs'
-        # destination = QgsCoordinateReferenceSystem()
-        # destination.createFromProj4(moon)
-        destination = self.layer.crs()
+        crs = self.layer.crs()
+        srs = osr.SpatialReference()
+        srs.ImportFromProj4(crs.toProj())
+        a = srs.GetSemiMajor()
+        b = srs.GetSemiMinor()
+        proj4 = "+proj=latlong +a={} +b={}".format(a,b)
+        destination = QgsCoordinateReferenceSystem()
+        destination.createFromProj(proj4)
         return destination
 
     def get_latlong_srs(self):
@@ -586,7 +589,7 @@ class CircleCraters(object):
         e = p.ellipsoid()
         crs = p.crs()
         srs = osr.SpatialReference()
-        srs.ImportFromProj4(crs.toProj4())
+        srs.ImportFromProj4(crs.toProj())
         a = srs.GetSemiMajor()
         b = srs.GetSemiMinor()
         proj4 = "+proj=latlong +a={} +b={}".format(a,b)
@@ -599,9 +602,13 @@ class CircleCraters(object):
         e = p.ellipsoid()
         crs = p.crs()
         srs = osr.SpatialReference()
-        srs.ImportFromProj4(crs.toProj4())
+        srs.ImportFromProj4(crs.toProj())
         return srs
 
+    def get_project_crs(self):
+        p = QgsProject.instance()
+        return p.crs()
+        
     def get_a_and_b(self,layer):
         #this_crs = layer.crs()
         #wkt = this_crs.toWkt()
@@ -609,20 +616,27 @@ class CircleCraters(object):
         #srs.importFromWkt(wkt)
         #print(srs)
         #print(dir(this_crs))
-        p = QgsProject.instance()
-        e = p.ellipsoid()
-        crs = p.crs()
+        # p = QgsProject.instance()
+        # e = p.ellipsoid()
+        # crs = p.crs()
+        crs = layer.crs()
         srs = osr.SpatialReference()
-        srs.ImportFromProj4(crs.toProj4())
-        print("******",e)
-        da = QgsDistanceArea()  
-        da.willUseEllipsoid() # should be true
+        srs.ImportFromProj4(crs.toProj())
+        # print("******",e)
+        # da = QgsDistanceArea()  
+        # da.willUseEllipsoid() # should be true
         a = srs.GetSemiMajor()
         b = srs.GetSemiMinor()
         return a,b
 
     def draw_circle(self, circle):
-        polygon = [QgsPointXY(*point) for point in circle.to_polygon()]
+        # destination = self.layer.crs()
+        destination = self.get_destination_crs()
+        source = self.get_project_crs()
+        xform_to_latlon = self.crs_transform(source, destination)  # project to latlon
+        xform = self.crs_transform(source, self.layer.crs())  # project to layer
+
+        polygon = [self.transform_point(xform, QgsPointXY(*point)) for point in circle.to_polygon()]
         print(circle)
         print(polygon)
         print(type(polygon))
@@ -638,16 +652,12 @@ class CircleCraters(object):
         feature.setGeometry(geometry)
         feature.setFields(self.layer.fields())
 
-        destination = self.layer.crs()
-        source = self.layer.crs()
-        xform = self.crs_transform(source, destination)
-
         #print circle.center.x, circle.center.y
         #print(circle.center.x, circle.center.y)
 
         line = [
             QgsPointXY(circle.center.x, circle.center.y),
-            QgsPointXY(circle.center.x + circle.radius, circle.center.y),
+            QgsPointXY(circle.center.x, circle.center.y + circle.radius),
         ]
 
         transformed = [
@@ -661,10 +671,11 @@ class CircleCraters(object):
         new_line_geometry = QgsGeometry.fromPolyline([QgsPoint(transformed[0][0], transformed[0][1]), QgsPoint(transformed[1][0], transformed[1][1])])
 
         distance_area = self.get_distance_area(self.layer)
-        actual_line_distance = distance_area.measureLength(new_line_geometry)
+        actual_line_distance = distance_area.convertLengthMeasurement(distance_area.measureLength(new_line_geometry), QgsUnitTypes.DistanceMeters)
+        # TODO: still cannot convert to meters when layer is geo crs. If a ellips is set to distance_area, the diameter is multiplied a radii when layer is projected crs
         
         # Translate circle center to units of degrees
-        center_in_degrees = xform.transform(circle.center.x, circle.center.y)
+        center_in_degrees = xform_to_latlon.transform(circle.center.x, circle.center.y)
 
         # circle_feature.id() is NULL for .shp file
         # and assigned automaticly for .gpkg
