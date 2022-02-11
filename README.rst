@@ -64,11 +64,16 @@ Installation
    If you see this message install the Python Qt5 developer tools by running::
 
    On GNU/Linux systems::
-    Debian/Ubuntu:
+   
+   Debian/Ubuntu::
+   
        $ sudo apt-get install pyqt5-dev-tools
-    RHEL/CentOS/Fedora:
+       
+   RHEL/CentOS/Fedora::
+   
        $ yum groupinstall "C Development Tools and Libraries"
        $ yum install qt5-qtbase-devel
+       
    On OSX system::
 
        $ brew install pyqt
@@ -80,10 +85,15 @@ Installation
    If you see this message install the python sphinx library by running::
 
    On GNU/Linux systems::
-    Debian/Ubuntu:
+   
+   Debian/Ubuntu::
+   
        $ sudo apt-get install python3-sphinx
-    RHEL/CentOS/Fedora:
+       
+   RHEL/CentOS/Fedora::
+   
        $ yum install python-sphinx
+       
    On OSX system::
 
        $ brew install sphinx-doc
